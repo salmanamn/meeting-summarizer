@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Model files (fetched by scripts/fetch_models.py, pinned by models.lock.json), generated audio and outputs
+models/
+out/
+
+# Local settings and lab data
+.env
+data/
+local.settings.json

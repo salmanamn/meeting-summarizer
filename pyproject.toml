@@ -1,0 +1,58 @@
+[project]
+name = "meeting-summarizer"
+version = "0.1.0"
+description = "Meeting summarizer: a recording in Blob storage -> transcript -> decisions, action items and open questions as strict JSON -> Cosmos DB"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "pydantic>=2.14,<3",
+    "openai>=3.57,<4",
+]
+
+# One group per job (D10). The Functions app (M2) installs the project plus `stt` and `storage`; `fixtures` (Piper,
+# GPL) only makes the synthetic test meetings on the laptop and never ships; `models` only fetches model files.
+# Locally `uv sync` installs every group below.
+[dependency-groups]
+stt = [
+    "faster-whisper==1.2.1",
+    "av>=18,<19", # faster-whisper 1.2.1 calls av.open(metadata_errors=...), which PyAV 19 removed (Project 4 D2)
+]
+storage = [
+    "azure-storage-blob>=12.31,<13",
+    "azure-cosmos>=4.17,<5",
+]
+fixtures = [
+    "piper-tts==1.8.0",
+]
+models = [
+    "huggingface-hub>=1.0,<2",
+    "httpx>=0.28,<1", # resumable model downloads (src/meeting/download.py, from Project 4)
+]
+dev = [
+    "pytest>=9.2,<10",
+    "ruff>=0.17,<0.18",
+]
+
+[tool.uv]
+default-groups = ["stt", "storage", "fixtures", "models", "dev"]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/meeting"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+"scripts/decisions_index.py" = ["RUF001"] # the en dash in "D1–D11" is intended (file copied from Project 4)

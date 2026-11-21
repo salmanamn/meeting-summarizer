@@ -1,0 +1,19 @@
+{
+  "id": "M02",
+  "title": "Weekly status check with nothing decided",
+  "speakers": {"Lina": 4, "Omar": 50},
+  "lines": [
+    ["Lina", "Hi Omar. Just a quick status check before the weekend."],
+    ["Omar", "Hi Lina. Nothing new from my side. The tests are still running, and everything looks normal so far."],
+    ["Lina", "Same here. The designs are where they were on Monday."],
+    ["Omar", "Do you think the brand team will reply before the holiday?"],
+    ["Lina", "I really don't know. We will see."],
+    ["Omar", "Okay. Have a good weekend."],
+    ["Lina", "You too. Bye."]
+  ],
+  "expect": {
+    "decisions": 0,
+    "open_questions": 1,
+    "action_items": []
+  }
+}

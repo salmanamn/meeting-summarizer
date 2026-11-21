@@ -1,0 +1,64 @@
+{
+  "stt-small": {
+    "files": {
+      "config.json": {
+        "sha256": "b55496ac7940a7ae47d2c01eab40edfd8701feec1229d9cce3b40014383fb828",
+        "size": 2370
+      },
+      "model.bin": {
+        "sha256": "3e305921506d8872816023e4c273e75d2419fb89b24da97b4fe7bce14170d671",
+        "size": 483546902
+      },
+      "tokenizer.json": {
+        "sha256": "fb7b63191e9bb045082c79fd742a3106a12c99513ab30df4a0d47fa6cb6fd0ab",
+        "size": 2203239
+      },
+      "vocabulary.txt": {
+        "sha256": "34ce3fe1c5041027b3f8d42912270993f986dbc4bb34cf27f951e34a1e453913",
+        "size": 459861
+      }
+    },
+    "repo": "Systran/faster-whisper-small",
+    "revision": "536b0662742c02347bc0e980a01041f333bce120"
+  },
+  "stt-tiny": {
+    "files": {
+      "config.json": {
+        "sha256": "a73a28cdfe1c43ccc7202fa333d1f89c202477271407ae9a7f19afa52039cac8",
+        "size": 2249
+      },
+      "model.bin": {
+        "sha256": "dcb76c6586fc06cbdac6dd21f14cfd129cc4cdd9dce19bf4ffa62e59cbe6e6d1",
+        "size": 75538270
+      },
+      "tokenizer.json": {
+        "sha256": "fb7b63191e9bb045082c79fd742a3106a12c99513ab30df4a0d47fa6cb6fd0ab",
+        "size": 2203239
+      },
+      "vocabulary.txt": {
+        "sha256": "34ce3fe1c5041027b3f8d42912270993f986dbc4bb34cf27f951e34a1e453913",
+        "size": 459861
+      }
+    },
+    "repo": "Systran/faster-whisper-tiny",
+    "revision": "d90ca5fe260221311c53c58e660288d3deb8d356"
+  },
+  "tts-en-libritts": {
+    "files": {
+      "MODEL_CARD": {
+        "sha256": "0ccde6927e5bb4d743f4ea39618a9387ba18cca3351220a8a9cfdbc68b30fcb9",
+        "size": 279
+      },
+      "en_US-libritts_r-medium.onnx": {
+        "sha256": "10bb85e071d616fcf4071f369f1799d0491492ab3c5d552ec19fb548fac13195",
+        "size": 78580914
+      },
+      "en_US-libritts_r-medium.onnx.json": {
+        "sha256": "b471dc60d2d8335e819c393d196d6fbf792817f40051257b269878505bc9afb3",
+        "size": 20123
+      }
+    },
+    "repo": "rhasspy/piper-voices",
+    "revision": "e9c8a39444359388adaa94255becb37a5a2b8e51"
+  }
+}

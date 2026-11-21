@@ -1,0 +1,39 @@
+{
+  "id": "M01",
+  "title": "Mobile app version two release planning",
+  "speakers": {"Sara": 60, "Omar": 50, "Lina": 4},
+  "lines": [
+    ["Sara", "Good morning everyone. This is the planning meeting for the version two release of the Pearl Pay mobile app. Omar, Lina, thanks for joining."],
+    ["Omar", "Morning. I have the test results from last week, so I can start with those."],
+    ["Sara", "Please go ahead."],
+    ["Omar", "We found three bugs in the payment screen. Two are fixed. The third one only happens on older Android phones, and we are still looking at it."],
+    ["Lina", "Do we know how many customers still use those phones?"],
+    ["Omar", "Not yet. I can pull the numbers from the analytics dashboard."],
+    ["Sara", "Good. Omar, please send those numbers to the team by Wednesday."],
+    ["Omar", "Sure, I will send them by Wednesday."],
+    ["Sara", "Next, the release date. Marketing asked for the fifteenth of March."],
+    ["Lina", "The fifteenth works for the design team, as long as the new icons are approved this week."],
+    ["Sara", "Then let's decide it. We release version two on the fifteenth of March."],
+    ["Omar", "Agreed."],
+    ["Lina", "Agreed."],
+    ["Sara", "Lina, can you get the new icons approved by Friday?"],
+    ["Lina", "Yes. I will send them to the brand team today and get approval by Friday."],
+    ["Sara", "One more decision. We drop the dark mode feature from this release and move it to version two point one."],
+    ["Omar", "That makes sense. It needs more testing anyway."],
+    ["Lina", "Fine with me."],
+    ["Sara", "I will update the release notes and share them with the support team next Monday."],
+    ["Omar", "What about the price change for international transfers? Will that be in version two?"],
+    ["Sara", "I don't know yet. Finance hasn't confirmed it. Let's keep that open."],
+    ["Lina", "And who will present the release at the all hands meeting?"],
+    ["Sara", "Good question. We will come back to that. Thanks everyone."]
+  ],
+  "expect": {
+    "decisions": 2,
+    "open_questions": 2,
+    "action_items": [
+      {"owner": "Omar", "keywords": ["number", "phone", "android", "analytics", "customer"]},
+      {"owner": "Lina", "keywords": ["icon"]},
+      {"owner": null, "keywords": ["release note", "notes"]}
+    ]
+  }
+}

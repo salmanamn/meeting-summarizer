@@ -1,0 +1,52 @@
+# Local lab for the meeting summarizer (D8). Azurite (Blob storage) and the Cosmos DB emulator always; Ollama with
+# --profile ai. Same host ports as the ticket-triage lab (10000-10002, 8081, 11434): never run both at once.
+name: meeting-lab
+
+services:
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.37.0 # same image as ticket-triage-agent (already on disk)
+    container_name: meeting-azurite
+    restart: unless-stopped
+    command: ["azurite", "--blobHost", "0.0.0.0", "--queueHost", "0.0.0.0", "--tableHost", "0.0.0.0", "--location", "/data", "--skipApiVersionCheck"]
+    volumes:
+      - azurite-data:/data
+    ports:
+      - "127.0.0.1:10000:10000" # blob
+      - "127.0.0.1:10001:10001" # queue (the Functions host uses it in M2)
+      - "127.0.0.1:10002:10002" # table
+
+  cosmos:
+    # vNext emulator, pinned by digest (from vnext-latest, as in ticket-triage-agent): NoSQL API over HTTP
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator@sha256:db53613dae19d0a3d5ad50688d14aa6e957af082dafea56b52e1bd3a6b3f1406
+    container_name: meeting-cosmos
+    restart: unless-stopped
+    environment:
+      PROTOCOL: http
+      ENABLE_EXPLORER: "true"
+      ENABLE_TELEMETRY: "false"
+    volumes:
+      - cosmos-data:/data
+    ports:
+      - "127.0.0.1:8081:8081" # gateway (SDK endpoint)
+      - "127.0.0.1:8082:8080" # health (/ready); 8080 is the Kusto lab's
+      - "127.0.0.1:1234:1234" # Data Explorer
+
+  ollama:
+    image: ollama/ollama:0.40.15 # same image as Projects 3 and 4; CPU only
+    profiles: ["ai"]
+    container_name: meeting-ollama
+    restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: 30m
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_CONTEXT_LENGTH: "16384" # a 10-minute meeting is about 2,000 tokens; headroom so nothing is cut silently
+    volumes:
+      - ollama-models:/root/.ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+
+volumes:
+  azurite-data:
+  cosmos-data:
+  ollama-models:
