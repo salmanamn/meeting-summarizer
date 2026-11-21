@@ -38,3 +38,31 @@ def test_environment_overrides():
     assert settings.chat_reasoning_effort == "low"
     assert settings.summary_max_tokens == 4000
     assert settings.transcript_max_chars == 100
+
+
+def test_store_defaults_are_the_emulators():
+    settings = load({})
+    assert settings.recordings_connection == "UseDevelopmentStorage=true"
+    assert settings.recordings_service_uri == ""
+    assert (settings.incoming_container, settings.transcripts_container) == ("incoming", "transcripts")
+    assert settings.cosmos_endpoint == "http://localhost:8081"
+    assert settings.cosmos_key.startswith("C2y6yDjf5")  # the emulator's published key, only for its address
+    assert (settings.cosmos_database, settings.jobs_container) == ("meetings", "jobs")
+    assert settings.max_manifest_bytes == 64 * 1024
+    assert settings.max_recording_bytes == 300 * 1024 * 1024
+    assert settings.max_attachment_bytes == 20 * 1024 * 1024
+    assert settings.max_recording_seconds == 3600
+    assert settings.job_max_attempts == 5
+
+
+def test_azure_values_mean_identity_not_keys():
+    settings = load(
+        {
+            "RecordingsStorage__blobServiceUri": "https://strecordings.blob.core.windows.net",
+            "RecordingsStorage": "UseDevelopmentStorage=true",  # ignored once the service URI is set
+            "COSMOS_ENDPOINT": "https://cosmos-meetings.documents.azure.com:443/",
+        }
+    )
+    assert settings.recordings_connection == ""
+    assert settings.recordings_service_uri == "https://strecordings.blob.core.windows.net"
+    assert settings.cosmos_key == ""  # no emulator key anywhere but the emulator's address

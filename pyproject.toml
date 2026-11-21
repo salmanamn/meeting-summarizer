@@ -8,7 +8,7 @@ dependencies = [
     "openai>=3.57,<4",
 ]
 
-# One group per job (D10). The Functions app (M2) installs the project plus `stt` and `storage`; `fixtures` (Piper,
+# One group per job (D10). The Functions app (M2) ships `stt`, `storage` and `function`; `fixtures` (Piper,
 # GPL) only makes the synthetic test meetings on the laptop and never ships; `models` only fetches model files.
 # Locally `uv sync` installs every group below.
 [dependency-groups]
@@ -19,6 +19,10 @@ stt = [
 storage = [
     "azure-storage-blob>=12.31,<13",
     "azure-cosmos>=4.17,<5",
+    "azure-identity>=1.27,<2", # identity-based connections on Azure (no keys); unused with the emulators' keys
+]
+function = [
+    "azure-functions>=2.4,<3",
 ]
 fixtures = [
     "piper-tts==1.8.0",
@@ -33,7 +37,7 @@ dev = [
 ]
 
 [tool.uv]
-default-groups = ["stt", "storage", "fixtures", "models", "dev"]
+default-groups = ["stt", "storage", "function", "fixtures", "models", "dev"]
 
 [build-system]
 requires = ["hatchling>=1.27"]
@@ -44,7 +48,9 @@ packages = ["src/meeting"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+pythonpath = ["src", "scripts"] # function_app.py and the scripts' helpers are importable by the tests
+addopts = "-ra -m 'not integration'" # `-m integration` on the command line runs the emulator tests instead
+markers = ["integration: needs the compose lab (Azurite, Cosmos emulator) up"]
 
 [tool.ruff]
 line-length = 120
