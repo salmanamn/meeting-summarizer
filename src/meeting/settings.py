@@ -5,6 +5,12 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+# The Cosmos DB emulator's well-known key (public, the same in every emulator). Only used when COSMOS_ENDPOINT is
+# the emulator's default address: anywhere else an empty key means Entra ID (D8, D17).
+COSMOS_EMULATOR_ENDPOINT = "http://localhost:8081"
+COSMOS_EMULATOR_KEY = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
+MB = 1024 * 1024
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -26,6 +32,24 @@ class Settings:
     summary_max_tokens: int
     transcript_max_chars: int  # longer transcripts are refused before any model call (D4)
 
+    # Stores (M2). The recordings account: a connection string locally (Azurite), or only its blob service URI on
+    # Azure, which means the app's managed identity (the same setting names the Functions host reads, D17).
+    recordings_connection: str  # RecordingsStorage
+    recordings_service_uri: str  # RecordingsStorage__blobServiceUri
+    incoming_container: str
+    transcripts_container: str
+    cosmos_endpoint: str
+    cosmos_key: str  # empty: Entra ID
+    cosmos_database: str
+    jobs_container: str
+
+    # Limits, checked before any model runs (D16). Sizes in bytes.
+    max_manifest_bytes: int
+    max_recording_bytes: int
+    max_attachment_bytes: int
+    max_recording_seconds: int
+    job_max_attempts: int  # must equal host.json extensions.blobs.poisonBlobThreshold (a unit test checks)
+
     @property
     def stt_model_dir(self) -> Path:
         return self.models_dir / self.stt_model
@@ -38,6 +62,9 @@ def default_threads() -> int:
 
 def load(env: dict[str, str] | None = None) -> Settings:
     env = os.environ if env is None else env
+    cosmos_endpoint = env.get("COSMOS_ENDPOINT", COSMOS_EMULATOR_ENDPOINT)
+    emulator = cosmos_endpoint.rstrip("/") == COSMOS_EMULATOR_ENDPOINT
+    service_uri = env.get("RecordingsStorage__blobServiceUri", "")
     return Settings(
         models_dir=Path(env.get("MODELS_DIR", "models")),
         stt_model=env.get("STT_MODEL", "stt-small"),
@@ -54,4 +81,17 @@ def load(env: dict[str, str] | None = None) -> Settings:
         chat_reasoning_effort=env.get("CHAT_REASONING_EFFORT", ""),
         summary_max_tokens=int(env.get("SUMMARY_MAX_TOKENS", "1500")),
         transcript_max_chars=int(env.get("TRANSCRIPT_MAX_CHARS", "40000")),
+        recordings_connection="" if service_uri else env.get("RecordingsStorage", "UseDevelopmentStorage=true"),
+        recordings_service_uri=service_uri,
+        incoming_container=env.get("INCOMING_CONTAINER", "incoming"),
+        transcripts_container=env.get("TRANSCRIPTS_CONTAINER", "transcripts"),
+        cosmos_endpoint=cosmos_endpoint,
+        cosmos_key=env.get("COSMOS_KEY", COSMOS_EMULATOR_KEY if emulator else ""),
+        cosmos_database=env.get("COSMOS_DATABASE", "meetings"),
+        jobs_container=env.get("COSMOS_JOBS_CONTAINER", "jobs"),
+        max_manifest_bytes=int(env.get("MAX_MANIFEST_KB", "64")) * 1024,
+        max_recording_bytes=int(env.get("MAX_RECORDING_MB", "300")) * MB,
+        max_attachment_bytes=int(env.get("MAX_ATTACHMENT_MB", "20")) * MB,
+        max_recording_seconds=int(env.get("MAX_RECORDING_MINUTES", "60")) * 60,
+        job_max_attempts=int(env.get("JOB_MAX_ATTEMPTS", "5")),
     )

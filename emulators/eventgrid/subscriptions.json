@@ -1,0 +1,19 @@
+{
+  "source": {
+    "account": "devstoreaccount1",
+    "containers": ["incoming"],
+    "pollSeconds": 1
+  },
+  "retryDelaysSeconds": [2, 4, 8, 16],
+  "subscriptions": [
+    {
+      "name": "meeting-manifest",
+      "endpoint": "http://127.0.0.1:7071/runtime/webhooks/blobs?functionName=Host.Functions.meeting_job",
+      "includedEventTypes": ["Microsoft.Storage.BlobCreated"],
+      "subjectBeginsWith": "/blobServices/default/containers/incoming/blobs/",
+      "subjectEndsWith": "/meeting.json",
+      "maxDeliveryAttempts": 5,
+      "timeoutSeconds": 30
+    }
+  ]
+}

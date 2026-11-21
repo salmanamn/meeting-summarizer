@@ -1,0 +1,25 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "RecordingsStorage": "UseDevelopmentStorage=true",
+    "COSMOS_ENDPOINT": "http://localhost:8081",
+    "COSMOS_KEY": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
+    "COSMOS_DATABASE": "meetings",
+    "COSMOS_JOBS_CONTAINER": "jobs",
+    "INCOMING_CONTAINER": "incoming",
+    "TRANSCRIPTS_CONTAINER": "transcripts",
+    "MODELS_DIR": "../models",
+    "STT_MODEL": "stt-small",
+    "STT_THREADS": "4",
+    "OPENAI_BASE_URL": "http://127.0.0.1:11434/v1",
+    "OPENAI_API_KEY": "ollama",
+    "CHAT_MODEL": "phi4-mini:3.8b",
+    "CHAT_REASONING_EFFORT": "",
+    "MAX_RECORDING_MB": "300",
+    "MAX_ATTACHMENT_MB": "20",
+    "MAX_RECORDING_MINUTES": "60",
+    "JOB_MAX_ATTEMPTS": "5"
+  }
+}
