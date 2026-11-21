@@ -17,14 +17,20 @@ work and the other stops (D18).
 Errors: `Rejected` = the upload or its content can't be summarised (permanent, no model call is retried for it).
 Anything else is transient (model or store unreachable): it propagates, the host retries the delivery at once, up
 to JOB_MAX_ATTEMPTS = poisonBlobThreshold, and the last attempt records `retries_exhausted` instead of raising.
+A model error (timeout, no connection, 429, 5xx) first waits 30, 60, 120, 120 s (D21): the host's retry is
+immediate, and a local model keeps generating a request its client gave up on, so an immediate retry only queues
+behind it and times out too (M2 run A).
 """
 
 import logging
 import tempfile
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+
+import openai
 
 from meeting.manifest import MANIFEST_NAME, ManifestInvalid, meeting_id_from_path, parse
 from meeting.media import HEAD_BYTES, Unreadable, attachment_kind, audio_kind, duration_seconds
@@ -35,6 +41,13 @@ from meeting.transcript import Transcript
 
 log = logging.getLogger("meeting.job")
 RECORD_VERSION = 1
+# Errors from the model's endpoint worth waiting for. APITimeoutError is an APIConnectionError.
+MODEL_ERRORS = (openai.APIConnectionError, openai.RateLimitError, openai.InternalServerError)
+
+
+def model_retry_delay(attempt: int, base: int, cap: int) -> int:
+    """Seconds to wait after a model error on `attempt` (1-based) before the host retries: base, 2x, 4x ..., capped."""
+    return min(cap, base * 2 ** (attempt - 1))
 
 
 def utc_now() -> str:
@@ -77,6 +90,7 @@ class JobRunner:
         transcriber: Callable[[], object],
         model: Callable[[], object],
         now: Callable[[], str] = utc_now,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         self.s = settings
         self.blobs = blobs
@@ -84,6 +98,7 @@ class JobRunner:
         self._transcriber = transcriber  # factories: the Whisper model and the client load on first use only
         self._model = model
         self.now = now
+        self.sleep = sleep
 
     # ---- entry point -------------------------------------------------------------------------------------------
 
@@ -208,6 +223,10 @@ class JobRunner:
             log.warning(
                 "%s: attempt %d of %d failed in %s: %s", meeting_id, attempt, limit, doc["stage"], type(exc).__name__
             )
+            if isinstance(exc, MODEL_ERRORS):
+                delay = model_retry_delay(attempt, self.s.model_retry_base_seconds, self.s.model_retry_max_seconds)
+                log.info("%s: model error, waiting %d s before the host retries", meeting_id, delay)
+                self.sleep(delay)
             raise
         return Outcome("summarised", meeting_id, f"attempt {attempt}")
 

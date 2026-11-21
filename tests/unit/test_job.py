@@ -8,7 +8,7 @@ import openai
 import pytest
 from fakes import FakeBlobs, FakeJobs, FakeModel, FakeTranscriber, wav_bytes
 
-from meeting.job import JobRunner, Rejected, transcript_blob_name
+from meeting.job import JobRunner, Rejected, model_retry_delay, transcript_blob_name
 from meeting.settings import load
 
 ANSWER = {
@@ -29,7 +29,10 @@ class Lab:
         self.settings = dataclasses.replace(load({}), **settings)
         self.blobs, self.jobs = FakeBlobs(), FakeJobs()
         self.stt, self.llm = FakeTranscriber(), FakeModel(ANSWER)
-        self.runner = JobRunner(self.settings, self.blobs, self.jobs, lambda: self.stt, lambda: self.llm)
+        self.slept: list[float] = []  # the backoff before a model retry (D21), recorded instead of waited
+        self.runner = JobRunner(
+            self.settings, self.blobs, self.jobs, lambda: self.stt, lambda: self.llm, sleep=self.slept.append
+        )
         self.recording = wav_bytes(2.0)
 
     def upload(self, audio: bytes | None = None, attachments: dict[str, bytes] | None = None, **manifest) -> str:
@@ -279,7 +282,9 @@ def test_two_deliveries_at_once_one_does_the_work(lab):
     def get_racing(job_id):  # the first delivery reads "no job", then the second one creates it before the first
         calls.append(job_id)
         if len(calls) == 1:
-            other = JobRunner(lab.settings, lab.blobs, lab.jobs, lambda: lab.stt, lambda: lab.llm)
+            other = JobRunner(
+                lab.settings, lab.blobs, lab.jobs, lambda: lab.stt, lambda: lab.llm, sleep=lab.slept.append
+            )
             lab.jobs.get = real_get
             other.handle(PATH)
             return None
@@ -308,3 +313,29 @@ def test_a_job_refused_at_the_door_never_reached_received(lab):
     job = lab.job()
     assert list(job["stages"]) == ["failed"]
     assert (job["error"]["stage"], job["recording_seconds"], job["attempts"]) == ("received", None, 0)
+
+
+def test_model_errors_wait_before_the_retry_and_the_last_attempt_does_not():
+    """D21: the host retries at once; a local model is still busy with the request its client gave up on."""
+    lab = Lab()
+    lab.upload()
+    lab.llm.error = openai.APITimeoutError(request=None)
+    for _ in range(4):
+        with pytest.raises(openai.APITimeoutError):
+            lab.runner.handle(PATH)
+    assert lab.slept == [30, 60, 120, 120]
+    assert lab.runner.handle(PATH).detail == "retries_exhausted"  # attempt 5 records, nothing more to wait for
+    assert lab.slept == [30, 60, 120, 120]
+
+
+def test_other_transient_errors_retry_at_once(lab):
+    lab.upload()
+    lab.stt.error = RuntimeError("disk full")
+    with pytest.raises(RuntimeError):
+        lab.runner.handle(PATH)
+    assert lab.slept == []
+
+
+def test_retry_delay():
+    assert [model_retry_delay(a, 30, 120) for a in range(1, 6)] == [30, 60, 120, 120, 120]
+    assert model_retry_delay(1, 0, 120) == 0  # MODEL_RETRY_BASE_SECONDS=0 turns the wait off

@@ -4,7 +4,7 @@ Generated from the headings of [decisions.md](decisions.md) by `scripts/decision
 hand. `tests/unit/test_decisions.py` fails when this file and the headings disagree, or when a number is
 missing or used twice.
 
-19 decisions (D1–D19): 3 updated by a later one, 2 with a status of
+21 decisions (D1–D21): 6 updated by a later one, 2 with a status of
 their own (open questions, workarounds); the rest accepted as written.
 
 | # | Decision | Status |
@@ -16,7 +16,7 @@ their own (open questions, workarounds); the rest accepted as written.
 | [D5](decisions.md#d5--the-model-one-openai-compatible-client) | The model: one OpenAI-compatible client | accepted |
 | [D6](decisions.md#d6--owners-come-from-what-was-said-not-from-who-spoke) | Owners come from what was said, not from who spoke | accepted |
 | [D7](decisions.md#d7--test-meetings-are-synthetic-scripted-and-carry-their-answers) | Test meetings are synthetic, scripted, and carry their answers | accepted; updated by D14 |
-| [D8](decisions.md#d8--configuration-from-environment-variables-the-local-lab) | Configuration from environment variables; the local lab | accepted |
+| [D8](decisions.md#d8--configuration-from-environment-variables-the-local-lab) | Configuration from environment variables; the local lab | accepted; updated by D20 |
 | [D9](decisions.md#d9--model-files-are-pinned-by-a-lock-reused-from-project-4) | Model files are pinned by a lock, reused from Project 4 | accepted |
 | [D10](decisions.md#d10--one-dependency-group-per-job) | One dependency group per job | accepted |
 | [D11](decisions.md#d11--a-decisions-index-from-day-one) | A decisions index from day one | accepted |
@@ -26,5 +26,7 @@ their own (open questions, workarounds); the rest accepted as written.
 | [D15](decisions.md#d15--the-upload-contract-the-manifest-goes-last-and-is-the-only-blob-that-triggers-updates-d12) | The upload contract: the manifest goes last and is the only blob that triggers | accepted; updates D12 |
 | [D16](decisions.md#d16--limits-and-checks-before-any-model-runs) | Limits and checks before any model runs | accepted |
 | [D17](decisions.md#d17--stores-one-job-record-per-meeting-in-cosmos-db-transcripts-as-blobs) | Stores: one job record per meeting in Cosmos DB, transcripts as blobs | accepted |
-| [D18](decisions.md#d18--stages-in-cosmos-rather-than-durable-functions-deliveries-are-at-least-once) | Stages in Cosmos rather than Durable Functions; deliveries are at least once | accepted |
-| [D19](decisions.md#d19--whisper-inside-the-function-on-azure-measured-now-decided-in-m7) | Whisper inside the Function on Azure: measured now, decided in M7 | open: decided in M7 with these numbers and M7's own |
+| [D18](decisions.md#d18--stages-in-cosmos-rather-than-durable-functions-deliveries-are-at-least-once) | Stages in Cosmos rather than Durable Functions; deliveries are at least once | accepted; updated by D21 |
+| [D19](decisions.md#d19--whisper-inside-the-function-on-azure-measured-now-decided-in-m7) | Whisper inside the Function on Azure: measured now, decided in M7 | open: decided in M7 with these numbers and M7's own; updated by D20 |
+| [D20](decisions.md#d20--lab-limits-ollama-capped-at-6-cpus-whisper-at-4-threads-updates-d8-d19) | Lab limits: Ollama capped at 6 CPUs, Whisper at 4 threads | accepted; updates D8, D19 |
+| [D21](decisions.md#d21--a-model-error-waits-before-the-hosts-retry-updates-d18) | A model error waits before the host's retry | accepted; updates D18 |

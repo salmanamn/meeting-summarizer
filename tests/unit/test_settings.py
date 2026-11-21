@@ -53,6 +53,7 @@ def test_store_defaults_are_the_emulators():
     assert settings.max_attachment_bytes == 20 * 1024 * 1024
     assert settings.max_recording_seconds == 3600
     assert settings.job_max_attempts == 5
+    assert (settings.model_retry_base_seconds, settings.model_retry_max_seconds) == (30, 120)
 
 
 def test_azure_values_mean_identity_not_keys():

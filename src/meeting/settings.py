@@ -49,6 +49,8 @@ class Settings:
     max_attachment_bytes: int
     max_recording_seconds: int
     job_max_attempts: int  # must equal host.json extensions.blobs.poisonBlobThreshold (a unit test checks)
+    model_retry_base_seconds: int  # wait before a model error is retried: base, doubling per attempt (D21)
+    model_retry_max_seconds: int  # ... up to this
 
     @property
     def stt_model_dir(self) -> Path:
@@ -94,4 +96,6 @@ def load(env: dict[str, str] | None = None) -> Settings:
         max_attachment_bytes=int(env.get("MAX_ATTACHMENT_MB", "20")) * MB,
         max_recording_seconds=int(env.get("MAX_RECORDING_MINUTES", "60")) * 60,
         job_max_attempts=int(env.get("JOB_MAX_ATTEMPTS", "5")),
+        model_retry_base_seconds=int(env.get("MODEL_RETRY_BASE_SECONDS", "30")),
+        model_retry_max_seconds=int(env.get("MODEL_RETRY_MAX_SECONDS", "120")),
     )
