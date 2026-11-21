@@ -31,6 +31,7 @@
 
 ## B. The same event delivered twice: `m01-1`
 
+
 - Checked 2026-11-21 20:07 UTC through GET /api/meetings/m01-1; result: summarised
 
     m01-1  received     1 file(s), 84.2 s of audio
@@ -49,7 +50,8 @@
     question  [01:11] Will the price change for international transfers be included in version 2?
     grounding   action_items[2]: owner 'Unknown' is not named in the transcript, removed
 
-## B. The same event delivered twice: `m01-1`
+## B2. The replay from Step 11 (the same event again): `m01-1`
+
 
 - Checked 2026-11-21 20:46 UTC through GET /api/meetings/m01-1; result: summarised
 
