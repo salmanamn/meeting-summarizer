@@ -1,0 +1,22 @@
+{
+  "id": "H02",
+  "title": "Summer campaign brainstorm, nothing decided",
+  "speakers": {"Noor": 60, "Yusuf": 50, "Hana": 4},
+  "lines": [
+    ["Noor", "This is just a brainstorm, no decisions today. Ideas for the summer campaign?"],
+    ["Yusuf", "We could sponsor a football tournament."],
+    ["Hana", "Or a beach clean-up day with customers."],
+    ["Noor", "Both sound interesting. What would a tournament cost?"],
+    ["Yusuf", "I have no idea, honestly."],
+    ["Hana", "A clean-up day is cheaper, I think."],
+    ["Noor", "Good ideas. We will discuss them properly another time."]
+  ],
+  "answers": {
+    "decisions": [],
+    "action_items": [],
+    "open_questions": [
+      {"keywords": [["tournament"], ["cost"]], "lines": [4, 5]}
+    ],
+    "forbidden": []
+  }
+}

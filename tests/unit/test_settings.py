@@ -14,7 +14,10 @@ def test_defaults_are_the_laptop_values():
     assert settings.chat_model == "phi4-mini:3.8b"
     assert settings.chat_reasoning_effort == ""
     assert settings.summary_max_tokens == 1500
-    assert settings.transcript_max_chars == 40000
+    assert settings.transcript_max_chars == 100000  # D24: long meetings are split, so the limit is the job's
+    assert settings.part_max_chars == 6000
+    assert settings.attachment_context_chars == 4000
+    assert settings.max_attachment_pages == 50
 
 
 def test_environment_overrides():

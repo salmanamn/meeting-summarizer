@@ -8,7 +8,7 @@ dependencies = [
     "openai>=3.57,<4",
 ]
 
-# One group per job (D10). The Functions app (M2) ships `stt`, `storage` and `function`; `fixtures` (Piper,
+# One group per job (D10). The Functions app ships `stt`, `storage`, `function` and `docs` (M3); `fixtures` (Piper,
 # GPL) only makes the synthetic test meetings on the laptop and never ships; `models` only fetches model files.
 # Locally `uv sync` installs every group below.
 [dependency-groups]
@@ -24,12 +24,18 @@ storage = [
 function = [
     "azure-functions>=2.4,<3",
 ]
+docs = [
+    "docling-slim[format-docx]==2.151.1", # DOCX -> Markdown, simple pipeline, no models (D22)
+    "pypdfium2>=5.15,<6", # the PDF text layer (D22); Docling's PDF pipeline needs a layout model on PyTorch
+]
 fixtures = [
     "piper-tts==1.8.0",
+    "reportlab>=4.4,<5", # the test meetings' PDF attachments (BSD); their DOCX ones use python-docx from `docs`
 ]
 models = [
     "huggingface-hub>=1.0,<2",
     "httpx>=0.28,<1", # resumable model downloads (src/meeting/download.py, from Project 4)
+    "defusedxml>=0.7,<0.8", # the AMI annotations (scripts/ami_set.py) are untrusted XML
 ]
 dev = [
     "pytest>=9.2,<10",
@@ -37,7 +43,7 @@ dev = [
 ]
 
 [tool.uv]
-default-groups = ["stt", "storage", "function", "fixtures", "models", "dev"]
+default-groups = ["stt", "storage", "function", "docs", "fixtures", "models", "dev"]
 
 [build-system]
 requires = ["hatchling>=1.27"]

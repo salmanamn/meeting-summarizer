@@ -1,0 +1,45 @@
+{
+  "id": "ES2002c",
+  "title": "AMI ES2002c: remote control design project",
+  "source": {
+    "licence": "CC BY 4.0, AMI Meeting Corpus (University of Edinburgh and the AMI consortium)",
+    "answers": "ami_public_manual_1.6.2.zip, abstractive/ES2002c.abssumm.xml (DECISIONS and ACTIONS)",
+    "audio": "ES2002c.Mix-Headset.wav"
+  },
+  "answers": {
+    "decisions": [
+      {
+        "text": "The remote will be curvy."
+      },
+      {
+        "text": "The remote will be shaped like a snowman."
+      },
+      {
+        "text": "The remote will not have a talk-back function."
+      },
+      {
+        "text": "The remote will have a jog dial."
+      },
+      {
+        "text": "The materials used will be plastic and rubber."
+      },
+      {
+        "text": "The case will have a soft fruit-like feel to it."
+      },
+      {
+        "text": "The remote will not have an LCD display."
+      },
+      {
+        "text": "The remote will have a kinetic battery."
+      },
+      {
+        "text": "The remote will have rubber buttons."
+      }
+    ],
+    "action_items": [
+      {
+        "text": "Some team members will design a prototype of the remote"
+      }
+    ]
+  }
+}

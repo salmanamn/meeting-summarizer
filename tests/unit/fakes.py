@@ -130,13 +130,34 @@ class FakeModel:
         self.answer = answer
         self.error = error
         self.calls = 0
+        self.requests: list[dict] = []  # name, user message and schema of every call
 
     def complete_json(self, *, system, user, schema, name):
         from meeting.llm import Completion
 
         self.calls += 1
+        self.requests.append({"name": name, "user": user, "schema": schema})
         if self.error:
             raise self.error
         return Completion(
             text=json.dumps(self.answer), seconds=1.5, prompt_tokens=300, completion_tokens=120, finish_reason="stop"
+        )
+
+
+class FakeReader:
+    """Stands in for meeting.documents.LocalReader: one block per attachment, or raises `error`."""
+
+    def __init__(self, error: Exception | None = None) -> None:
+        self.error = error
+        self.calls: list[str] = []
+
+    def read(self, path, name, kind):
+        from meeting.documents import Block, Document
+
+        self.calls.append(name)
+        if self.error:
+            raise self.error
+        text = Path(path).read_bytes()[:40].decode(errors="replace")
+        return Document(
+            name=name, kind=kind, pages=1 if kind == "pdf" else None, blocks=[Block(f"{name} #1", text)], engine="fake"
         )

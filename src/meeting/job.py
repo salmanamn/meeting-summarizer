@@ -1,6 +1,7 @@
 """One meeting job (D15-D18): the manifest's arrival starts it, a record in Cosmos DB carries it through its stages.
 
-    received     the manifest is valid and every file it lists is there, the right size, type and SHA-256
+    received     the manifest is valid and every file it lists is there, the right size, type and SHA-256; the
+                 attachments are read into text blocks, stored next to the transcript (D22)
     transcribed  the transcript is stored as a blob (a retry or a re-upload of the same recording reuses it)
     summarised   the grounded summary is on the record
     failed       error.code says why; error.retryable says whether delivering the same manifest again helps
@@ -32,6 +33,7 @@ from pathlib import Path
 
 import openai
 
+from meeting.documents import AttachmentRejected, Document, LocalReader
 from meeting.manifest import MANIFEST_NAME, ManifestInvalid, meeting_id_from_path, parse
 from meeting.media import HEAD_BYTES, Unreadable, attachment_kind, audio_kind, duration_seconds
 from meeting.settings import Settings
@@ -76,6 +78,11 @@ def transcript_blob_name(meeting_id: str, sha256: str, stt_model: str) -> str:
     return f"{meeting_id}/{sha256[:16]}.{stt_model}.json"
 
 
+def document_blob_name(meeting_id: str, sha256: str, name: str) -> str:
+    """An attachment's text blocks, keyed by its content like the transcript (D22)."""
+    return f"{meeting_id}/{sha256[:16]}.{name}.json"
+
+
 def public_view(doc: dict) -> dict:
     """The record as the status endpoint shows it: Cosmos system fields dropped."""
     return {k: v for k, v in doc.items() if not k.startswith("_")}
@@ -91,6 +98,7 @@ class JobRunner:
         model: Callable[[], object],
         now: Callable[[], str] = utc_now,
         sleep: Callable[[float], None] = time.sleep,
+        reader: Callable[[], object] | None = None,
     ) -> None:
         self.s = settings
         self.blobs = blobs
@@ -99,6 +107,7 @@ class JobRunner:
         self._model = model
         self.now = now
         self.sleep = sleep
+        self._reader = reader or (lambda: LocalReader(max_pages=settings.max_attachment_pages))
 
     # ---- entry point -------------------------------------------------------------------------------------------
 
@@ -173,6 +182,7 @@ class JobRunner:
         recording = None
         try:
             manifest, files, recording, seconds = self._verify(meeting_id, raw, tmp)
+            self._read_attachments(meeting_id, files, tmp)
         except Rejected as rejected:
             self._mark_failed(
                 doc, rejected.code, rejected.message, retryable=False, stage="received", new=prior is None
@@ -279,7 +289,10 @@ class JobRunner:
                 transcript,
                 self._model(),
                 attendees=tuple(doc["attendees"]),
+                documents=self._documents(doc),
                 max_chars=self.s.transcript_max_chars,
+                part_chars=self.s.part_max_chars,
+                attachment_chars=self.s.attachment_context_chars,
             )
         except NoSpeech:
             raise Rejected("no_speech", "the transcript is empty") from None
@@ -295,6 +308,9 @@ class JobRunner:
             "seconds": c.seconds,
             "prompt_tokens": c.prompt_tokens,
             "completion_tokens": c.completion_tokens,
+            "parts": result.parts,
+            "calls": result.calls,
+            "attachments_cut": list(result.truncated),
             "grounding_warnings": result.warnings,
         }
         doc["stage"] = "summarised"
@@ -335,7 +351,7 @@ class JobRunner:
 
         recording = tmp / manifest.recording.name
         for ref, role, limit in checks:
-            target = recording if role == "recording" else None
+            target = recording if role == "recording" else tmp / ref.name  # attachments are read next (D22)
             try:
                 sha = self.blobs.sha256(incoming, f"{meeting_id}/{ref.name}", limit, target)
             except TooLarge:
@@ -351,6 +367,50 @@ class JobRunner:
             limit_min = self.s.max_recording_seconds / 60
             raise Rejected("too_long", f"{seconds / 60:.1f} minutes of audio, the limit is {limit_min:.0f}")
         return manifest, files, recording, seconds
+
+    # ---- attachments (D22) -------------------------------------------------------------------------------------
+
+    def _read_attachments(self, meeting_id: str, files: list[dict], tmp: Path) -> None:
+        """Read every attachment _verify downloaded into text blocks, store them as a blob, and note the blob and
+        the counts on the file's entry. A file that can't be read is a permanent failure, before any model runs."""
+        attachments = [f for f in files if f["role"] == "attachment"]
+        if not attachments:
+            return
+        reader = self._reader()
+        for entry in attachments:
+            try:
+                document = reader.read(tmp / entry["name"], entry["name"], entry["kind"])
+            except AttachmentRejected as exc:
+                raise Rejected(exc.code, exc.message) from None
+            name = document_blob_name(meeting_id, entry["sha256"], entry["name"])
+            self.blobs.write_text(self.s.transcripts_container, name, document.to_json())
+            entry["document"] = {
+                "blob": f"{self.s.transcripts_container}/{name}",
+                "pages": document.pages,
+                "blocks": len(document.blocks),
+                "chars": document.chars,
+                "engine": document.engine,
+                "warnings": document.warnings,
+            }
+            log.info(
+                "%s: %s read, %d block(s), %d characters",
+                meeting_id,
+                entry["name"],
+                len(document.blocks),
+                document.chars,
+            )
+
+    def _documents(self, doc: dict) -> tuple[Document, ...]:
+        out = []
+        for entry in doc["files"]:
+            if entry["role"] != "attachment":
+                continue
+            container, _, name = entry["document"]["blob"].partition("/")
+            stored = self.blobs.read_text(container, name)
+            if stored is None:  # written before the record said "received"; gone only if someone deleted it
+                raise Rejected("missing_file", f"the text of {entry['name']} is no longer stored")
+            out.append(Document.from_json(stored))
+        return tuple(out)
 
     # ---- record writes -----------------------------------------------------------------------------------------
 

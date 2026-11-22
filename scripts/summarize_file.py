@@ -3,9 +3,11 @@
 uv run python scripts/summarize_file.py out/meetings/M01.wav --expect M01 [--evidence docs/evidence/m1-M01.md]
 uv run python scripts/summarize_file.py --transcript out/M01.transcript.json --expect M01   skip speech to text
 uv run python scripts/summarize_file.py out/meetings/M01.wav --stt-only                     transcript only
+uv run python scripts/summarize_file.py rec.m4a --attach agenda.pdf --attendees "Sara,Omar"  any recording
 
-Writes out/<name>.transcript.json and out/<name>.summary.json. --expect compares with eval/meetings/<ID>.json (D7):
-transcript against the script, summary against the script's `expect` block; exit 1 when a check fails.
+Writes out/<name>.transcript.json and out/<name>.summary.json. --expect compares with eval/meetings/<ID>.json (D7,
+D26): the transcript against the script, the summary against the script's answers, and reads the meeting's
+attachments from out/meetings/<ID>/; exit 1 when a check fails. The set as a whole: scripts/eval_meetings.py.
 """
 
 import argparse
@@ -18,8 +20,11 @@ from pathlib import Path
 
 import openai
 
-from meeting.expect import check, wer
+from meeting.documents import LocalReader
+from meeting.evaluate import meeting_checks, score
+from meeting.expect import wer
 from meeting.llm import JsonModel
+from meeting.media import attachment_kind
 from meeting.settings import load
 from meeting.stt import WhisperTranscriber
 from meeting.summarize import NoSpeech, SummaryInvalid, TranscriptTooLong, summarize
@@ -38,14 +43,17 @@ def cpu_model() -> str:
 
 
 def show(summary) -> list[str]:
+    def source(item) -> str:
+        return f" (source: {item.source})" if item.source else ""  # an attachment block (D23)
+
     lines = [f"title     {summary.title}", f"overview  {summary.overview}"]
     for d in summary.decisions:
-        lines.append(f"decision  [{d.evidence or '--:--'}] {d.text}")
+        lines.append(f"decision  [{d.evidence or '--:--'}] {d.text}{source(d)}")
     for a in summary.action_items:
         due = f" (due: {a.due})" if a.due else ""
-        lines.append(f"action    [{a.evidence or '--:--'}] {a.owner or '(no owner)'}: {a.task}{due}")
+        lines.append(f"action    [{a.evidence or '--:--'}] {a.owner or '(no owner)'}: {a.task}{due}{source(a)}")
     for q in summary.open_questions:
-        lines.append(f"question  [{q.evidence or '--:--'}] {q.question}")
+        lines.append(f"question  [{q.evidence or '--:--'}] {q.question}{source(q)}")
     return lines
 
 
@@ -59,6 +67,7 @@ def main() -> int:
         "--attendees",
         help="comma-separated names (default with --expect: the script's speakers); hints for both models",
     )
+    parser.add_argument("--attach", nargs="+", type=Path, default=[], metavar="FILE", help="PDF or DOCX attachments")
     parser.add_argument("--stt-only", action="store_true", help="stop after the transcript")
     parser.add_argument("--evidence", type=Path, help="also write the run as a markdown evidence file")
     args = parser.parse_args()
@@ -94,9 +103,22 @@ def main() -> int:
         print(transcript.timestamped())
         return 0
 
+    attachments = list(args.attach)
+    if meeting and not attachments:
+        attachments = [OUT / "meetings" / args.expect / a["name"] for a in meeting.get("attachments", [])]
+    reader = LocalReader(max_pages=settings.max_attachment_pages)
+    documents = tuple(reader.read(p, p.name, attachment_kind(p.read_bytes()[:64], p.name)) for p in attachments)
     model = JsonModel.from_settings(settings)
     try:
-        result = summarize(transcript, model, attendees=attendees, max_chars=settings.transcript_max_chars)
+        result = summarize(
+            transcript,
+            model,
+            attendees=attendees,
+            documents=documents,
+            max_chars=settings.transcript_max_chars,
+            part_chars=settings.part_max_chars,
+            attachment_chars=settings.attachment_context_chars,
+        )
     except (NoSpeech, TranscriptTooLong, SummaryInvalid) as exc:
         print(f"FAIL {type(exc).__name__}: {exc}")
         return 1
@@ -110,17 +132,21 @@ def main() -> int:
     (OUT / f"{name}.summary.json").write_text(result.summary.model_dump_json(indent=2) + "\n", encoding="utf-8")
     print(
         f"summary     {c.seconds:.1f} s, {c.prompt_tokens} prompt + {c.completion_tokens} completion tokens, "
-        f"{settings.chat_model}; written to out/{name}.summary.json"
+        f"{result.parts} part(s), {result.calls} call(s), {settings.chat_model}; written to out/{name}.summary.json"
     )
     summary_lines = show(result.summary)
     print("\n".join(summary_lines))
     for warning in result.warnings:
         print(f"grounding   {warning}")
 
-    checks = check(result.summary, meeting["expect"], transcript_wer=transcript_wer) if meeting else []
-    for item in checks:
-        print(f"{'OK  ' if item.passed else 'FAIL'} {item.label}")
-    passed = all(item.passed for item in checks)
+    checks = []
+    if meeting:
+        timings_file = OUT / "meetings" / f"{args.expect}.lines.json"
+        timings = json.loads(timings_file.read_text()) if timings_file.is_file() else None
+        checks = meeting_checks(score(result.summary, meeting["answers"], timings), transcript_wer)
+    for label, ok in checks:
+        print(f"{'OK  ' if ok else 'FAIL'} {label}")
+    passed = all(ok for _, ok in checks)
     if meeting:
         print("CHECK PASSED" if passed else "CHECK FAILED")
 
@@ -137,7 +163,8 @@ def main() -> int:
             f"- Transcript: {len(transcript.segments)} segments, {transcript.audio_seconds:.1f} s of audio in "
             f"{transcript.seconds:.1f} s (RTF {transcript.rtf:.2f})"
             + (f", WER {transcript_wer:.1%} against the script" if transcript_wer is not None else ""),
-            f"- Summary call: {c.seconds:.1f} s, {c.prompt_tokens} prompt + {c.completion_tokens} completion tokens",
+            f"- Summary: {c.seconds:.1f} s, {c.prompt_tokens} prompt + {c.completion_tokens} completion tokens, "
+            f"{result.parts} part(s), {result.calls} call(s)",
             "- Synthetic meeting from a script (D7): this checks the pipeline, not quality on real recordings.",
             "",
             "## Summary",
@@ -150,7 +177,7 @@ def main() -> int:
             "",
         ]
         if checks:
-            lines += ["## Checks", "", *[f"- {'OK' if i.passed else 'FAIL'}: {i.label}" for i in checks], ""]
+            lines += ["## Checks", "", *[f"- {'OK' if ok else 'FAIL'}: {label}" for label, ok in checks], ""]
             lines += [f"**{'PASSED' if passed else 'FAILED'}**", ""]
         args.evidence.parent.mkdir(parents=True, exist_ok=True)
         args.evidence.write_text("\n".join(lines), encoding="utf-8")

@@ -1,0 +1,48 @@
+{
+  "id": "ES2002b",
+  "title": "AMI ES2002b: remote control design project",
+  "source": {
+    "licence": "CC BY 4.0, AMI Meeting Corpus (University of Edinburgh and the AMI consortium)",
+    "answers": "ami_public_manual_1.6.2.zip, abstractive/ES2002b.abssumm.xml (DECISIONS and ACTIONS)",
+    "audio": "ES2002b.Mix-Headset.wav"
+  },
+  "answers": {
+    "decisions": [
+      {
+        "text": "The team will not work with teletext."
+      },
+      {
+        "text": "The remote will only control televisions."
+      },
+      {
+        "text": "The corporate color and design must be incorporated into the design of the remote."
+      },
+      {
+        "text": "The remote will have buttons for the following functions: on and off, channel up and down, volume up and down, and entering channel numbers."
+      },
+      {
+        "text": "The remote has to look good and be easy to use."
+      },
+      {
+        "text": "The target demographic is people aged fifteen to thirty five."
+      },
+      {
+        "text": "The remote will use an infra-red sensor."
+      },
+      {
+        "text": "The remote will use regular batteries."
+      }
+    ],
+    "action_items": [
+      {
+        "text": "The industrial designer will work on the components concept."
+      },
+      {
+        "text": "The user interface designer will work on the user interface."
+      },
+      {
+        "text": "The marketing expert will work on trend watching"
+      }
+    ]
+  }
+}

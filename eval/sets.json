@@ -1,0 +1,4 @@
+{
+  "tuning": ["M01", "M02", "M03", "M04", "M05", "M06", "ami:ES2002b", "ami:ES2002c"],
+  "holdout": ["H01", "H02", "ami:IS1009b", "ami:IS1009c"]
+}

@@ -74,7 +74,9 @@ def fetch(url: str, meeting_id: str) -> tuple[int, dict]:
 
 def stage_line(job: dict, stage: str) -> str:
     if stage == "received":
-        return f"{len(job['files'])} file(s), {job['recording_seconds']:.1f} s of audio"
+        docs = [f["document"] for f in job["files"] if f.get("document")]
+        read = f", attachments read: {sum(d['blocks'] for d in docs)} block(s)" if docs else ""  # D22
+        return f"{len(job['files'])} file(s), {job['recording_seconds']:.1f} s of audio{read}"
     if stage == "transcribed":
         t = job["transcript"]
         return (
@@ -83,7 +85,8 @@ def stage_line(job: dict, stage: str) -> str:
         )
     if stage == "summarised":
         m = job["summary_meta"]
-        return f"{m['model']}, {m['seconds']:.1f} s, {m['completion_tokens']} completion tokens"
+        parts = f", {m['parts']} parts + merge" if m.get("parts", 1) > 1 else ""  # D24
+        return f"{m['model']}, {m['seconds']:.1f} s, {m['completion_tokens']} completion tokens{parts}"
     e = job["error"]
     return f"{e['code']} at {e['stage']}: {e['message']}{' (retryable)' if e['retryable'] else ''}"
 

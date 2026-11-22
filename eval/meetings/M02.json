@@ -11,9 +11,12 @@
     ["Omar", "Okay. Have a good weekend."],
     ["Lina", "You too. Bye."]
   ],
-  "expect": {
-    "decisions": 0,
-    "open_questions": 1,
-    "action_items": []
+  "answers": {
+    "decisions": [],
+    "action_items": [],
+    "open_questions": [
+      {"keywords": [["brand team", "reply", "holiday"]], "lines": [4, 5]}
+    ],
+    "forbidden": []
   }
 }
