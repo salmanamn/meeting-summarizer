@@ -1,0 +1,39 @@
+{
+  "id": "M06",
+  "title": "Customer demo and release rhythm, with a change of mind",
+  "speakers": {"Noor": 60, "Yusuf": 50, "Hana": 4},
+  "lines": [
+    ["Noor", "Morning. Two things today: the customer demo and our release rhythm."],
+    ["Yusuf", "For the demo, I suggest we move it to Thursday, so the new dashboard is ready."],
+    ["Hana", "Thursday is bad for the customer, they have a board meeting."],
+    ["Yusuf", "Then let us keep it on Wednesday and show the old dashboard."],
+    ["Noor", "Yes. The demo stays on Wednesday."],
+    ["Hana", "Maybe we could also record the demo for people who cannot join."],
+    ["Noor", "Maybe. It is an idea, but nobody has asked for it."],
+    ["Noor", "Yusuf, please prepare the demo account by Tuesday."],
+    ["Yusuf", "Will do, by Tuesday."],
+    ["Hana", "About the release rhythm. Some people want weekly releases instead of every two weeks."],
+    ["Yusuf", "I think weekly is too fast for the testers."],
+    ["Hana", "I think it is fine if we automate more tests."],
+    ["Noor", "We will not settle that today. Should we move to weekly releases? Let us think about it until the next meeting."],
+    ["Noor", "Hana, if the testers agree, could you write a short proposal for the next meeting?"],
+    ["Hana", "Sure, I can write it before the next meeting."],
+    ["Noor", "Thanks both."]
+  ],
+  "answers": {
+    "decisions": [
+      {"keywords": [["demo"], ["wednesday"]], "lines": [4, 5]}
+    ],
+    "action_items": [
+      {"owner": "Yusuf", "keywords": [["demo account", "account"]], "due": "tuesday", "lines": [8, 9]},
+      {"owner": "Hana", "keywords": [["proposal"]], "due": "next meeting", "lines": [14, 15]}
+    ],
+    "open_questions": [
+      {"keywords": [["weekly"]], "lines": [10, 11, 12, 13]}
+    ],
+    "forbidden": [
+      [["demo"], ["thursday"]],
+      [["record"]]
+    ]
+  }
+}

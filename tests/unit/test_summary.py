@@ -31,15 +31,23 @@ def test_schema_is_in_the_strict_subset():
 
 
 def test_schema_and_models_name_the_same_fields():
-    """The schema the model sees and the Pydantic models that check its answer must not drift apart."""
-    pairs = [
-        (SCHEMA, MeetingSummary),
-        (SCHEMA["properties"]["decisions"]["items"], Decision),
-        (SCHEMA["properties"]["action_items"]["items"], ActionItem),
-        (SCHEMA["properties"]["open_questions"]["items"], OpenQuestion),
-    ]
-    for schema, model in pairs:
-        assert list(schema["properties"]) == list(model.model_fields), model.__name__
+    """The schema the model sees and the Pydantic models that check its answer must not drift apart. With
+    attachments every item has a `source`; without, the schema leaves it out and the model's default is None."""
+    with_refs = summary_schema(["00:00"], ["agenda.docx #1"])
+    assert list(with_refs["properties"]) == list(MeetingSummary.model_fields)
+    for kind, model in (("decisions", Decision), ("action_items", ActionItem), ("open_questions", OpenQuestion)):
+        assert list(with_refs["properties"][kind]["items"]["properties"]) == list(model.model_fields), kind
+        without = list(SCHEMA["properties"][kind]["items"]["properties"])
+        assert without == [f for f in model.model_fields if f != "source"], kind
+
+
+def test_a_source_can_only_be_an_attachment_block_or_null():
+    schema = summary_schema(["00:00"], ["agenda.docx #1", "budget.pdf p2.1"])
+    sources = [n for p, n in walk(schema) if p.endswith(".source")]
+    assert len(sources) == 3
+    for node in sources:
+        assert node == {"anyOf": [{"type": "string", "enum": ["agenda.docx #1", "budget.pdf p2.1"]}, {"type": "null"}]}
+    assert not [p for p, _ in walk(SCHEMA) if p.endswith(".source")]  # no attachments: no source field at all
 
 
 def test_nullable_strings_are_exactly_owner_and_due():
@@ -90,7 +98,7 @@ def test_a_valid_summary_and_empty_lists():
         {"overview": "  "},
         {"decisions": [{"text": "x"}]},  # evidence missing: required, even when null
         {"decisions": [{"text": "x", "evidence": None, "extra": 1}]},
-        {"action_items": [{"task": "x", "owner": "o" * 81, "due": None, "evidence": None}]},
+        {"action_items": [{"task": "x", "owner": "o" * 401, "due": None, "evidence": None}]},
         {"open_questions": [{"question": "q", "evidence": None}] * 21},
         {"surprise": True},
     ],
@@ -133,3 +141,72 @@ def test_grounding_removes_evidence_outside_every_segment(transcript, evidence):
     grounded, warnings = ground(s, transcript)
     assert grounded.decisions[0].evidence is None
     assert warnings == [f"decisions[0]: evidence {evidence!r} is not inside any segment, removed"]
+
+
+@pytest.mark.parametrize(
+    ("due", "kept"),
+    [
+        ("Wednesday", "Wednesday"),
+        ("by Wednesday", "by Wednesday"),
+        ("wednesday.", "wednesday."),
+        ("Wednesday Next, the 15th of March (00:27 mentioned as 'Wednesday')", "Wednesday"),  # M1 phi4-mini, D28
+        ("By Wednesday from the meeting date", "By Wednesday"),  # M3 run 2
+        ("No specific due date mentioned", None),  # M3 run 2: a comment, no deadline
+        ("2026-03-11", None),  # a date the model worked out
+        ("Friday", None),  # not said in this meeting
+    ],
+)
+def test_due_keeps_only_the_meetings_own_words(transcript, due, kept):
+    s = summary(action_items=[{"task": "Send the numbers.", "owner": "Omar", "due": due, "evidence": "00:00"}])
+    grounded, warnings = ground(s, transcript)
+    assert grounded.action_items[0].due == kept
+    assert bool(warnings) is (kept != due)
+
+
+def test_a_decision_that_repeats_an_action_item_is_removed(transcript):
+    """M1/M2 runs: phi4-mini listed "Update the release notes" as a decision and an action item, same time."""
+    s = summary(
+        decisions=[
+            {"text": "Send the numbers to the team by Wednesday.", "evidence": "00:00"},
+            {"text": "Release on 15 March.", "evidence": "00:13"},
+        ]
+    )
+    grounded, warnings = ground(s, transcript)
+    assert [d.text for d in grounded.decisions] == ["Release on 15 March."]
+    assert warnings == ["decisions[0]: repeats the action item at 00:00, removed"]
+
+
+def test_similar_words_at_another_time_are_two_items(transcript):
+    s = summary(decisions=[{"text": "Send the numbers to the team.", "evidence": "00:07"}])
+    assert len(ground(s, transcript)[0].decisions) == 1
+
+
+def test_a_source_outside_the_attachments_is_removed(transcript):
+    s = summary(decisions=[{"text": "Release on 15 March.", "evidence": "00:13", "source": "agenda.docx #9"}])
+    grounded, warnings = ground(s, transcript, refs=("agenda.docx #1",))
+    assert grounded.decisions[0].source is None
+    assert warnings == ["decisions[0]: source 'agenda.docx #9' is not an attachment block, removed"]
+    kept, none = ground(s, transcript, refs=("agenda.docx #9",))
+    assert kept.decisions[0].source == "agenda.docx #9" and none == []
+
+
+def test_a_long_due_is_grounded_not_a_broken_summary(transcript):
+    """M3 run 1: phi4-mini wrote a `due` over 80 characters and the whole summary was refused (M06, ES2002b)."""
+    long_due = "Wednesday, which is when the team expects the numbers, as discussed at the start of the meeting " * 2
+    s = summary(action_items=[{"task": "Send the numbers.", "owner": "Omar", "due": long_due, "evidence": "00:00"}])
+    grounded, warnings = ground(s, transcript)
+    assert grounded.action_items[0].due == "Wednesday"
+    assert warnings[0].startswith("action_items[0]: due ") and warnings[0].endswith(
+        "cut to the meeting's words 'Wednesday'"
+    )
+
+
+def test_a_decision_that_says_who_does_a_task_is_that_task(transcript):
+    """M3 run 2 (M06): "Demo account preparation assigned to Yusuf by Tuesday" next to the action "Prepare demo
+    account", same time: the action's words are all in the decision (D28)."""
+    s = summary(
+        decisions=[{"text": "Numbers sending assigned to Omar, due Wednesday.", "evidence": "00:00"}],
+        action_items=[{"task": "Send the numbers", "owner": "Omar", "due": None, "evidence": "00:00"}],
+    )
+    grounded, warnings = ground(s, transcript)
+    assert grounded.decisions == [] and warnings == ["decisions[0]: repeats the action item at 00:00, removed"]

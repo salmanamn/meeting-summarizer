@@ -1,0 +1,22 @@
+{
+  "ES2002b.Mix-Headset.wav": {
+    "sha256": "977fbf6cd473cfb1984b41755762eea4d7ffdad3fb15adcfdebcb8842163ec66",
+    "size": 72952194
+  },
+  "ES2002c.Mix-Headset.wav": {
+    "sha256": "8aa5dca8a0d31aaa596ecec8e0d7d8df1646fd4328d2740b287650d8012412df",
+    "size": 77557804
+  },
+  "IS1009b.Mix-Headset.wav": {
+    "sha256": "07c2891ae6ad7c507b2a4f15b2dcd0a2343491df9e4e6a58f9db0d0b2c5e1382",
+    "size": 65676093
+  },
+  "IS1009c.Mix-Headset.wav": {
+    "sha256": "f317910070db0f2649315decbb34686d648bbe9dc3f7576710184f4d572bdbcc",
+    "size": 58268093
+  },
+  "ami_public_manual_1.6.2.zip": {
+    "sha256": "b56e5babb2496b8795deeeda7e71178d7fbc9963f94276cf2a3f4b56ebbc9f9d",
+    "size": 22887865
+  }
+}

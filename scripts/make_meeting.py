@@ -1,13 +1,15 @@
-"""Make a synthetic test meeting (D7): every line of eval/meetings/<ID>.json spoken by Piper, one LibriTTS-R voice
-per participant, with a pause between turns, into one WAV file.
+"""Make a synthetic test meeting (D7, D26): every line of eval/meetings/<ID>.json spoken by Piper, one LibriTTS-R
+voice per participant, with a pause between turns, into one WAV file; the time span of every line next to it (the
+evaluation checks evidence against it); and the meeting's attachments, if it has any.
 
-uv run python scripts/make_meeting.py M01 [M02 ...] [--seed N]     -> out/meetings/<ID>.wav
+uv run python scripts/make_meeting.py M01 [M02 ...] [--seed N]
+    -> out/meetings/<ID>.wav, out/meetings/<ID>.lines.json, out/meetings/<ID>/<attachment> (DOCX, PDF)
 
 The voice model is CC BY 4.0 (LibriTTS-R); Piper itself is GPL and only used here, never in the app (D10).
 Piper adds random variation to every line. ONNX Runtime's seed only takes effect for a session created after it is
 set, so every meeting loads the voice afresh after setting the seed: same meeting + same seed = same file on this
 machine, whatever else runs in the same call. Another seed gives the same script spoken slightly differently
-(scripts/stt_modes.py uses that). The audio is regenerated, never committed.
+(scripts/stt_modes.py uses that). Audio and attachments are regenerated, never committed.
 """
 
 import argparse
@@ -52,15 +54,26 @@ def speak(voice: PiperVoice, text: str, speaker_id: int) -> bytes:
         return wav_file.readframes(wav_file.getnframes())
 
 
-def render(meeting: dict, models_dir: Path, seed: int = 0) -> tuple[bytes, int]:
-    """The whole meeting as PCM frames, and the sample rate."""
+def render_lines(meeting: dict, models_dir: Path, seed: int = 0) -> tuple[bytes, int, list[dict]]:
+    """The whole meeting as PCM frames, the sample rate, and each line's start and end in seconds."""
     voice = load_voice(models_dir, seed)
     rate = voice.config.sample_rate
     pause = b"\x00\x00" * int(PAUSE_SECONDS * rate)
     frames = bytearray(pause)
-    for speaker, text in meeting["lines"]:
-        frames += speak(voice, text, meeting["speakers"][speaker]) + pause
-    return bytes(frames), rate
+    timings = []
+    for number, (speaker, text) in enumerate(meeting["lines"], start=1):
+        start = len(frames) / 2 / rate
+        frames += speak(voice, text, meeting["speakers"][speaker])
+        timings.append(
+            {"line": number, "speaker": speaker, "start": round(start, 2), "end": round(len(frames) / 2 / rate, 2)}
+        )
+        frames += pause
+    return bytes(frames), rate, timings
+
+
+def render(meeting: dict, models_dir: Path, seed: int = 0) -> tuple[bytes, int]:
+    frames, rate, _ = render_lines(meeting, models_dir, seed)
+    return frames, rate
 
 
 def write_wav(path: Path, frames: bytes, rate: int) -> None:
@@ -70,6 +83,41 @@ def write_wav(path: Path, frames: bytes, rate: int) -> None:
         wav_file.setsampwidth(2)
         wav_file.setframerate(rate)
         wav_file.writeframes(frames)
+
+
+def write_docx(path: Path, spec: dict) -> None:
+    from docx import Document  # python-docx, installed with Docling (the docs group)
+
+    document = Document()
+    document.add_heading(spec["heading"], level=1)
+    for paragraph in spec["paragraphs"]:
+        document.add_paragraph(paragraph)
+    document.save(path)
+
+
+def write_pdf(path: Path, spec: dict) -> None:
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate
+
+    styles = getSampleStyleSheet()
+    story = []
+    for number, page in enumerate(spec["pages"]):
+        if number:
+            story.append(PageBreak())
+        story.append(Paragraph(page[0], styles["Heading2"]))
+        story += [Paragraph(line, styles["Normal"]) for line in page[1:]]
+    SimpleDocTemplate(str(path), pagesize=A4, invariant=1).build(story)
+
+
+def write_attachments(meeting: dict) -> list[Path]:
+    paths = []
+    for spec in meeting.get("attachments", []):
+        path = OUT / meeting["id"] / spec["name"]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        (write_docx if spec["name"].endswith(".docx") else write_pdf)(path, spec)
+        paths.append(path)
+    return paths
 
 
 def main() -> int:
@@ -83,12 +131,16 @@ def main() -> int:
     models_dir = load().models_dir
     for meeting_id in args.meetings:
         meeting = read_meeting(meeting_id)
-        frames, rate = render(meeting, models_dir, args.seed)
+        frames, rate, timings = render_lines(meeting, models_dir, args.seed)
         target = OUT / f"{meeting_id}.wav"
         write_wav(target, frames, rate)
+        lines = ",\n".join(json.dumps(t) for t in timings)
+        (OUT / f"{meeting_id}.lines.json").write_text(f"[\n{lines}\n]\n", encoding="utf-8")
         names = ", ".join(meeting["speakers"])
         seconds = len(frames) / 2 / rate
         print(f"{target.relative_to(ROOT)}: {len(meeting['lines'])} lines, {names}, {seconds:.1f} s at {rate} Hz")
+        for path in write_attachments(meeting):
+            print(f"{path.relative_to(ROOT)}: {path.stat().st_size} bytes")
     return 0
 
 

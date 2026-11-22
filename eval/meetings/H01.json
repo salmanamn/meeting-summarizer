@@ -1,0 +1,34 @@
+{
+  "id": "H01",
+  "title": "Card printing vendor review",
+  "speakers": {"Sara": 60, "Omar": 50, "Lina": 4},
+  "lines": [
+    ["Lina", "Let us review the card printing vendor. Their last batch was two weeks late."],
+    ["Omar", "They said the delay was a machine failure."],
+    ["Sara", "It is the second delay this year. I want a backup vendor."],
+    ["Lina", "Then we agree: we keep the current vendor until the contract ends in September, and we look for a backup."],
+    ["Omar", "Agreed."],
+    ["Sara", "Omar, please get two quotes from other vendors by the end of the month."],
+    ["Omar", "I will have two quotes by the end of the month."],
+    ["Lina", "I will write to the current vendor about the delays."],
+    ["Sara", "One more thing. We order fifty thousand cards for the next batch, not seventy thousand."],
+    ["Omar", "Agreed, fifty thousand."],
+    ["Omar", "Do we know if the new chip supplier changes the price?"],
+    ["Lina", "No idea yet."],
+    ["Sara", "Thanks, everyone."]
+  ],
+  "answers": {
+    "decisions": [
+      {"keywords": [["vendor", "contract"], ["september"]], "lines": [4, 5]},
+      {"keywords": [["card", "batch", "order"], ["fifty", "50"]], "lines": [9, 10]}
+    ],
+    "action_items": [
+      {"owner": "Omar", "keywords": [["quote"]], "due": "end of the month", "lines": [6, 7]},
+      {"owner": null, "keywords": [["write", "delay"]], "lines": [8]}
+    ],
+    "open_questions": [
+      {"keywords": [["chip"]], "lines": [11, 12]}
+    ],
+    "forbidden": []
+  }
+}

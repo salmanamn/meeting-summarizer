@@ -3,7 +3,8 @@
 Locally that is Ollama's /v1 API (the key is ignored; `json_schema` becomes a grammar the model must follow). On
 Azure it will be Azure OpenAI's v1 endpoint with an Entra ID token and strict structured outputs. Reasoning models
 there take `reasoning_effort` and `max_completion_tokens` and reject `temperature` and `max_tokens`; a non-empty
-`reasoning_effort` switches the request to that shape (as in Projects 3 and 4).
+`reasoning_effort` switches the request to that shape (as in Projects 3 and 4). `none` is the exception: a local
+model that thinks by default (qwen3.5) is asked not to, in the classic shape (Ollama maps `none` to think=false, D27).
 """
 
 import time
@@ -52,6 +53,8 @@ class JsonModel:
         )
 
     def sampling_args(self) -> dict[str, Any]:
+        if self.reasoning_effort == "none":
+            return {"temperature": 0, "max_tokens": self.max_tokens, "reasoning_effort": "none"}
         if self.reasoning_effort:
             return {"reasoning_effort": self.reasoning_effort, "max_completion_tokens": self.max_tokens}
         return {"temperature": 0, "max_tokens": self.max_tokens}

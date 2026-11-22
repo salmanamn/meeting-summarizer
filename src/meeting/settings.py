@@ -30,7 +30,9 @@ class Settings:
     chat_model: str
     chat_reasoning_effort: str  # empty for classic chat models; set for reasoning models (Azure)
     summary_max_tokens: int
-    transcript_max_chars: int  # longer transcripts are refused before any model call (D4)
+    transcript_max_chars: int  # longer transcripts are refused before any model call (D4, D24)
+    part_max_chars: int  # a longer transcript is summarised in parts of at most this, then merged (D24)
+    attachment_context_chars: int  # attachment text given to every call, whole blocks, in order (D23)
 
     # Stores (M2). The recordings account: a connection string locally (Azurite), or only its blob service URI on
     # Azure, which means the app's managed identity (the same setting names the Functions host reads, D17).
@@ -48,6 +50,7 @@ class Settings:
     max_recording_bytes: int
     max_attachment_bytes: int
     max_recording_seconds: int
+    max_attachment_pages: int  # a PDF with more pages is refused (D22)
     job_max_attempts: int  # must equal host.json extensions.blobs.poisonBlobThreshold (a unit test checks)
     model_retry_base_seconds: int  # wait before a model error is retried: base, doubling per attempt (D21)
     model_retry_max_seconds: int  # ... up to this
@@ -82,7 +85,9 @@ def load(env: dict[str, str] | None = None) -> Settings:
         chat_model=env.get("CHAT_MODEL", "phi4-mini:3.8b"),
         chat_reasoning_effort=env.get("CHAT_REASONING_EFFORT", ""),
         summary_max_tokens=int(env.get("SUMMARY_MAX_TOKENS", "1500")),
-        transcript_max_chars=int(env.get("TRANSCRIPT_MAX_CHARS", "40000")),
+        transcript_max_chars=int(env.get("TRANSCRIPT_MAX_CHARS", "100000")),
+        part_max_chars=int(env.get("PART_MAX_CHARS", "6000")),
+        attachment_context_chars=int(env.get("ATTACHMENT_CONTEXT_CHARS", "4000")),
         recordings_connection="" if service_uri else env.get("RecordingsStorage", "UseDevelopmentStorage=true"),
         recordings_service_uri=service_uri,
         incoming_container=env.get("INCOMING_CONTAINER", "incoming"),
@@ -95,6 +100,7 @@ def load(env: dict[str, str] | None = None) -> Settings:
         max_recording_bytes=int(env.get("MAX_RECORDING_MB", "300")) * MB,
         max_attachment_bytes=int(env.get("MAX_ATTACHMENT_MB", "20")) * MB,
         max_recording_seconds=int(env.get("MAX_RECORDING_MINUTES", "60")) * 60,
+        max_attachment_pages=int(env.get("MAX_ATTACHMENT_PAGES", "50")),
         job_max_attempts=int(env.get("JOB_MAX_ATTEMPTS", "5")),
         model_retry_base_seconds=int(env.get("MODEL_RETRY_BASE_SECONDS", "30")),
         model_retry_max_seconds=int(env.get("MODEL_RETRY_MAX_SECONDS", "120")),

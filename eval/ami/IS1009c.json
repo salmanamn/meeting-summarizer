@@ -1,0 +1,36 @@
+{
+  "id": "IS1009c",
+  "title": "AMI IS1009c: remote control design project",
+  "source": {
+    "licence": "CC BY 4.0, AMI Meeting Corpus (University of Edinburgh and the AMI consortium)",
+    "answers": "ami_public_manual_1.6.2.zip, abstractive/IS1009c.abssumm.xml (DECISIONS and ACTIONS)",
+    "audio": "IS1009c.Mix-Headset.wav"
+  },
+  "answers": {
+    "decisions": [
+      {
+        "text": "They decided that the product should be bright, colorful, trendy in design, strong, compact, have push buttons, and contain supplement features (possibly mute button, swapping button, voice recognition)."
+      },
+      {
+        "text": "The power source will be batteries because it is cost-effective."
+      },
+      {
+        "text": "They will have the industrial engineer do more research on the cost of voice recognition before deciding whether to include that function."
+      }
+    ],
+    "action_items": [
+      {
+        "text": "The marketing expert will do the product evaluation."
+      },
+      {
+        "text": "The industrial designer and interface specialist will work together on a prototype using modeling clay."
+      },
+      {
+        "text": "The industrial designer will come up with a user interface design."
+      },
+      {
+        "text": "Their coaches will send specific instructions and answer questions."
+      }
+    ]
+  }
+}

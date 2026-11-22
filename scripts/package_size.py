@@ -1,6 +1,6 @@
 """What a Flex Consumption deployment package of this app would weigh (D19), without Azure.
 
-uv run python scripts/package_size.py [--out docs/evidence/m2-package-size.md]
+uv run python scripts/package_size.py [--out docs/evidence/m3-package-size.md]
 
 Installs src/requirements.txt for Linux x86-64 / Python 3.13 (the Flex runtime) into a temporary folder with uv,
 adds the app's own code, zips it like a deployment package, and reports the sizes, plus the Whisper model that
@@ -68,9 +68,10 @@ def main() -> int:
     print("\n".join(lines))
     if args.out:
         text = [
-            "# M2: the size of a Functions deployment package with Whisper in it",
+            "# The size of a Functions deployment package with Whisper and the attachment readers in it",
             "",
-            f"- Date: {datetime.now(UTC):%Y-%m-%d %H:%M} UTC, `src/requirements.txt` (groups stt, storage, function)",
+            f"- Date: {datetime.now(UTC):%Y-%m-%d %H:%M} UTC, `src/requirements.txt` (groups stt, storage, function, "
+            "docs)",
             *lines,
             "",
         ]
