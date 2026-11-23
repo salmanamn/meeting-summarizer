@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Protect main: PR required (0 approvals, solo repo), strict required checks pinned to the GitHub Actions app,
-# admins included, linear history, conversations resolved, no force-push or deletion (D34).
+# admins included, linear history, conversations resolved, no force-push or deletion (D34; iac-* since D43).
 # The required checks are read from a commit whose CI is green, so a typo can't leave main waiting forever.
 #
 # Usage: ./scripts/protect-main.sh <ref with green CI, e.g. m4-ci>   (needs gh with repo scope, and jq)
@@ -8,7 +8,7 @@ set -euo pipefail
 
 REPO=${REPO:-salmanamn/meeting-summarizer}
 REF=${1:?usage: protect-main.sh <ref with green CI>}
-CHECKS=(lint unit tests-must-fail integration package)
+CHECKS=(lint unit tests-must-fail integration package iac-static iac-plan)
 
 runs=$(gh api "repos/$REPO/commits/$REF/check-runs?per_page=100" \
   --jq '.check_runs[] | [.name, (.conclusion // "pending"), (.app.id | tostring)] | @tsv')

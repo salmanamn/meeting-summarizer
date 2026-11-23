@@ -4,7 +4,7 @@
 
 A meeting recording goes into Blob storage; out comes a summary you can act on: the **decisions**, the **action items with their owners**, and the **open questions**, as strict JSON in Cosmos DB, each item pointing at the moment in the recording that supports it. Built from open components on a laptop (faster-whisper, an LLM on Ollama, Azurite and the Cosmos DB emulator), then the same code serverless on Azure (Functions, Azure AI Speech batch transcription, Azure OpenAI).
 
-**Status: M4 — CI on every change.** The Functions app runs on the laptop (M2): an upload to Azurite becomes a summary in the Cosmos DB emulator, through the same Event Grid-based Blob trigger that Flex Consumption uses. M3 added attachments, long meetings and a scored evaluation that chose `qwen3.5:4b` (D33). Every PR now runs lint, the unit tests, known-bad changes that must fail them, the pipeline with Whisper tiny against the emulators, and a deployment-package gate; `main` is protected. Nothing on Azure yet.
+**Status: M5 — the Azure stack in Terraform.** The Functions app runs on the laptop (M2): an upload to Azurite becomes a summary in the Cosmos DB emulator, through the same Event Grid-based Blob trigger that Flex Consumption uses. M3 added attachments, long meetings and a scored evaluation that chose `qwen3.5:4b` (D33). Every PR runs lint, the unit tests, known-bad changes that must fail them, the pipeline with Whisper tiny against the emulators, a deployment-package gate, and (M5) the Terraform checks: the full Azure stack planned against floci-az and gated by policy. `main` is protected. Nothing deployed to Azure yet (M7).
 
 ```mermaid
 flowchart LR
@@ -57,7 +57,7 @@ Then three terminals: `source .venv/bin/activate && cd src && func start` (the F
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every pull request and push to `main`; all five jobs are required before a merge:
+`.github/workflows/ci.yml` runs on every pull request and push to `main`; all seven jobs are required before a merge (the two Terraform ones are under Infrastructure):
 
 | Job | What must hold |
 |---|---|
@@ -68,6 +68,17 @@ Then three terminals: `source .venv/bin/activate && cd src && func start` (the F
 | `package` | the Functions deployment package at most 200 MB zipped, with no PyTorch, GPU runtime, Piper or dev tools in it |
 
 The stand-in model checks the request and the plumbing, not the summary: quality is the evaluation's job (`scripts/eval_meetings.py`, D26), run by hand after a model or prompt change. Locally: `uv run python scripts/tests_must_fail.py`, and with the lab up and `scripts/fetch_models.py stt-tiny tts-en-libritts`, `uv run pytest -m integration`.
+
+## Infrastructure
+
+`infra/` describes the Azure stack (D38–D43): three storage accounts (Function host, recordings, Event Grid dead-letters), an Event Grid system topic on the recordings account whose one subscription sends `meeting.json` events to the Blob trigger's webhook, a Flex Consumption app on a user-assigned identity, Cosmos DB serverless, Azure OpenAI (gpt-5.4-mini), Azure AI Speech for batch transcription, Application Insights, and diagnostics to the shared `log-slz-platform` workspace. No keys anywhere: local auth is off on every service, and each identity gets data roles on single resources or containers.
+
+| Check | What must hold |
+|---|---|
+| `iac-static` | `terraform fmt` and `validate` of both roots, Checkov per root, the policy unit tests |
+| `iac-plan` | the full stack planned against floci-az, every Conftest rule met, and 39 known-bad changes to that plan each denied (`scripts/iac_must_fail.py`) |
+
+Locally: `docker compose --profile iac up -d floci-az && ./scripts/iac.sh wait-floci && ./scripts/trust-floci-cert.sh`, then `./scripts/iac.sh static` and `./scripts/iac.sh gate`.
 
 ## What is measured so far
 

@@ -13,3 +13,12 @@ out/
 .env
 data/
 local.settings.json
+
+# Terraform (the .terraform.lock.hcl files are committed)
+.terraform/
+.terraform-validate/
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+plan.json

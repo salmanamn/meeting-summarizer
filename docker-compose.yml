@@ -1,5 +1,6 @@
 # Local lab for the meeting summarizer (D8). Azurite (Blob storage) and the Cosmos DB emulator always; Ollama with
-# --profile ai. Same host ports as the ticket-triage lab (10000-10002, 8081, 11434): never run both at once.
+# --profile ai; floci-az with --profile iac (Terraform only, D43). Same host ports as the ticket-triage lab
+# (10000-10002, 8081, 11434, 4577): never run both at once.
 name: meeting-lab
 
 services:
@@ -46,6 +47,22 @@ services:
       - ollama-models:/root/.ollama
     ports:
       - "127.0.0.1:11434:11434"
+
+  floci-az:
+    # Terraform's control plane only (D43): plans of the full stack, create/destroy of the subset it supports.
+    # 0.16.0, the version Projects 1, 3 and 4 use (0.17.0 exists, D43); by digest like every image here (D34).
+    image: floci/floci-az:0.16.0@sha256:f9d7552c9c02be84f12e266d6201ff52c1f23421af94943cbf687526ded89790
+    profiles: ["iac"]
+    container_name: meeting-floci-az
+    restart: unless-stopped
+    environment:
+      FLOCI_AZ_TLS_ENABLED: "true"              # azurerm talks HTTPS only (scripts/trust-floci-cert.sh)
+      FLOCI_AZ_STORAGE_MODE: persistent
+      FLOCI_AZ_SERVICES_FUNCTIONS_MOCKED: "true" # never start Function containers (no docker.sock mounted)
+    volumes:
+      - ./data/floci:/app/data
+    ports:
+      - "127.0.0.1:4577:4577" # ARM + data planes; the same port as the other labs' floci-az: one lab at a time
 
 volumes:
   azurite-data:
