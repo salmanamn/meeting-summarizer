@@ -4,7 +4,7 @@ name: meeting-lab
 
 services:
   azurite:
-    image: mcr.microsoft.com/azure-storage/azurite:3.37.0 # same image as ticket-triage-agent (already on disk)
+    image: mcr.microsoft.com/azure-storage/azurite:3.38.0@sha256:c26024d62bf4a5b88a40968afd217234c00e1fc9a4790dc6105d1ca7979f6eec # by digest (D34)
     container_name: meeting-azurite
     restart: unless-stopped
     command: ["azurite", "--blobHost", "0.0.0.0", "--queueHost", "0.0.0.0", "--tableHost", "0.0.0.0", "--location", "/data", "--skipApiVersionCheck"]
@@ -32,7 +32,7 @@ services:
       - "127.0.0.1:1234:1234" # Data Explorer
 
   ollama:
-    image: ollama/ollama:0.40.15 # same image as Projects 3 and 4; CPU only unless docker-compose.gpu.yml is added (D30)
+    image: ollama/ollama:0.40.15@sha256:0e59999e0e8f9fd4e704bd788a89b7e4cad399367fb1365f8c102ac662288761 # by digest, as in Project 4 (D34); CPU only unless docker-compose.gpu.yml is added (D30)
     profiles: ["ai"]
     container_name: meeting-ollama
     restart: unless-stopped

@@ -124,3 +124,15 @@ def test_markdown_blocks_drop_image_placeholders():
 def test_json_round_trip():
     doc = Document("a.pdf", "pdf", 1, [Block("a.pdf p1.1", "Hello")], "pypdfium2 text", ["w"])
     assert Document.from_json(doc.to_json()) == doc
+
+
+def test_an_encrypted_docx_is_refused_before_reading(tmp_path, reader):
+    path = make_docx(tmp_path / "locked.docx", "Secret agenda")
+    data = bytearray(path.read_bytes())
+    with zipfile.ZipFile(path) as archive:
+        start = archive.start_dir  # the central directory: where infolist() reads each member's flags
+    at = data.find(b"PK\x01\x02", start)
+    data[at + 8] |= 0x1  # general purpose bit 0 of the first member: "encrypted"
+    path.write_bytes(bytes(data))
+    with pytest.raises(AttachmentRejected, match=r"unreadable_attachment: locked\.docx is encrypted"):
+        reader.read(path, "locked.docx", "docx")

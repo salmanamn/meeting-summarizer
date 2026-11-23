@@ -1,0 +1,125 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  UV_VERSION: "0.13.8"
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install uv
+        run: pipx install "uv==${UV_VERSION}"
+      - name: The lockfile matches pyproject.toml
+        run: uv lock --check
+      - name: Sync the dev tools only
+        run: uv sync --locked --only-group dev
+      - name: ruff format
+        run: uv run --no-sync ruff format --check --diff .
+      - name: ruff check
+        run: uv run --no-sync ruff check --output-format=github .
+      - name: src/requirements.txt is the lock's app groups (D10)
+        run: |
+          uv export --no-default-groups --group stt --group storage --group function --group docs --no-hashes --no-emit-project --no-header -o src/requirements.txt >/dev/null
+          git diff --exit-code src/requirements.txt
+      - name: Decisions index is generated from the headings (D11)
+        run: uv run --no-sync python scripts/decisions_index.py --check
+      - name: Shell scripts
+        run: uvx --from shellcheck-py==0.11.0.1 shellcheck scripts/*.sh
+      - name: Workflows (with shellcheck on every run block)
+        run: uvx --from actionlint-py==1.7.12.25 --with shellcheck-py==0.11.0.1 actionlint
+      - name: Compose files are valid, every image pinned by digest (D34)
+        run: |
+          set -o pipefail
+          docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile ai config -q
+          docker compose --profile ai config --images | tee "$RUNNER_TEMP/images.txt"
+          if grep -v '@sha256:' "$RUNNER_TEMP/images.txt"; then echo "::error::pin the images above by digest"; exit 1; fi
+
+  unit:
+    name: unit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install uv
+        run: pipx install "uv==${UV_VERSION}"
+      - name: Sync
+        run: uv sync --locked
+      - name: Unit tests (the decisions drift test included)
+        run: uv run pytest
+
+  tests-must-fail:
+    name: tests-must-fail
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install uv
+        run: pipx install "uv==${UV_VERSION}"
+      - name: Sync
+        run: uv sync --locked
+      - name: Every known-bad change must fail the unit tests (D35)
+        run: uv run python scripts/tests_must_fail.py
+
+  integration:
+    name: integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install uv
+        run: pipx install "uv==${UV_VERSION}"
+      - name: The lab's own emulators, from docker-compose.yml (D36)
+        run: docker compose up -d azurite cosmos
+      - name: Sync
+        run: uv sync --locked
+      - name: Whisper tiny and the test voice from Hugging Face, checked against models.lock.json
+        run: uv run python scripts/fetch_models.py stt-tiny tts-en-libritts
+      - name: Emulators ready
+        run: ./scripts/smoke-local.sh
+      - name: Integration tests (stores, and the pipeline with Whisper tiny and the stand-in model)
+        run: uv run pytest -m integration -v
+      - name: Emulator logs
+        if: failure()
+        run: docker compose logs --tail 60
+
+  package:
+    name: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install uv
+        run: pipx install "uv==${UV_VERSION}"
+      - name: Sync the project only (the script installs the package's own requirements)
+        run: uv sync --locked --no-default-groups
+      - name: Deployment package within budget, nothing that must not ship (D37)
+        run: |
+          set -o pipefail
+          uv run --no-sync python scripts/package_size.py --max-zip-mb 200 --forbid torch,onnxruntime-gpu,piper-tts,pytest,ruff | tee -a "$GITHUB_STEP_SUMMARY"
