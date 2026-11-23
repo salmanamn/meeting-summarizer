@@ -28,7 +28,9 @@ class Settings:
     openai_api_key: str
     openai_timeout: float
     chat_model: str
-    chat_reasoning_effort: str  # empty for classic chat models; set for reasoning models (Azure)
+    chat_reasoning_effort: (
+        str  # none: a local model with thinking off (D33); empty: classic models; low...: reasoning models (Azure)
+    )
     summary_max_tokens: int
     transcript_max_chars: int  # longer transcripts are refused before any model call (D4, D24)
     part_max_chars: int  # a longer transcript is summarised in parts of at most this, then merged (D24)
@@ -82,9 +84,9 @@ def load(env: dict[str, str] | None = None) -> Settings:
         openai_base_url=env.get("OPENAI_BASE_URL", "http://127.0.0.1:11434/v1"),
         openai_api_key=env.get("OPENAI_API_KEY", "ollama"),  # Ollama ignores the key; the SDK requires one
         openai_timeout=float(env.get("OPENAI_TIMEOUT_SECONDS", "300")),
-        chat_model=env.get("CHAT_MODEL", "phi4-mini:3.8b"),
-        chat_reasoning_effort=env.get("CHAT_REASONING_EFFORT", ""),
-        summary_max_tokens=int(env.get("SUMMARY_MAX_TOKENS", "1500")),
+        chat_model=env.get("CHAT_MODEL", "qwen3.5:4b"),
+        chat_reasoning_effort=env.get("CHAT_REASONING_EFFORT", "none"),
+        summary_max_tokens=int(env.get("SUMMARY_MAX_TOKENS", "3000")),
         transcript_max_chars=int(env.get("TRANSCRIPT_MAX_CHARS", "100000")),
         part_max_chars=int(env.get("PART_MAX_CHARS", "6000")),
         attachment_context_chars=int(env.get("ATTACHMENT_CONTEXT_CHARS", "4000")),

@@ -84,8 +84,8 @@ def test_the_answer_is_grounded(chat, transcript):
     assert [a.owner for a in result.summary.action_items] == ["Omar", None]
     assert result.summary.action_items[1].evidence is None
     assert result.warnings == [
-        "action_items[1]: owner 'Priya' is not named in the transcript, removed",
         "action_items[1]: evidence '05:00' is not inside any segment, removed",
+        "action_items[1]: owner 'Priya' is not named in the transcript, removed",
     ]
 
 
@@ -279,7 +279,7 @@ def test_a_question_from_the_last_part_cannot_be_dropped_by_the_merge():
     """M3 run 2 (M05): the merge marked a question as answered that nothing after it could have answered (D28)."""
     model = Script(
         item_summary(questions=[("Weekend cover?", "00:10")]),
-        item_summary(),
+        item_summary(decisions=[("No weekend cover this quarter.", "00:40")]),
         item_summary(questions=[("Arabic articles?", "01:40")]),
         {"title": "T", "overview": "O.", "answered": ["Q1"]},
     )
@@ -288,3 +288,16 @@ def test_a_question_from_the_last_part_cannot_be_dropped_by_the_merge():
     assert merge_request["schema"]["properties"]["answered"]["items"]["enum"] == ["Q1"]
     assert "Arabic" not in merge_request["user"].split("Open questions:")[1]
     assert [q.question for q in result.summary.open_questions] == ["Arabic articles?"]
+
+
+def test_the_merge_cannot_drop_a_question_nothing_later_answers():
+    """M3 runs: merges dropped "Who will run the training?" with no later item about it (D29)."""
+    model = Script(
+        item_summary(questions=[("Who will run the training?", "00:10")]),
+        item_summary(decisions=[("Book the room for the fourteenth.", "00:40")]),
+        item_summary(),
+        {"title": "T", "overview": "O.", "answered": ["Q1"]},
+    )
+    result = summarize(long_transcript(), model, part_chars=200)
+    assert [q.question for q in result.summary.open_questions] == ["Who will run the training?"]
+    assert "open_questions: Q1 at 00:10 kept: no later item answers it" in result.warnings

@@ -99,7 +99,7 @@ def test_a_valid_summary_and_empty_lists():
         {"decisions": [{"text": "x"}]},  # evidence missing: required, even when null
         {"decisions": [{"text": "x", "evidence": None, "extra": 1}]},
         {"action_items": [{"task": "x", "owner": "o" * 401, "due": None, "evidence": None}]},
-        {"open_questions": [{"question": "q", "evidence": None}] * 21},
+        {"open_questions": [{"question": "q", "evidence": None}] * 61},
         {"surprise": True},
     ],
 )
@@ -119,7 +119,7 @@ def test_grounding_removes_an_owner_nobody_named(transcript):
     grounded, warnings = ground(s, transcript)
     assert grounded.action_items[0].owner is None
     assert grounded.action_items[0].task == "Book the room."  # the item stays; only the invented owner goes
-    assert warnings == ["action_items[0]: owner 'Priya' is not named in the transcript, removed"]
+    assert warnings == ["action_items[0]: owner 'Priya' is not named where the task is said, removed"]
 
 
 def test_an_attendee_counts_as_named(transcript):
@@ -177,8 +177,10 @@ def test_a_decision_that_repeats_an_action_item_is_removed(transcript):
 
 
 def test_similar_words_at_another_time_are_two_items(transcript):
-    s = summary(decisions=[{"text": "Send the numbers to the team.", "evidence": "00:07"}])
-    assert len(ground(s, transcript)[0].decisions) == 1
+    """The decision holds all of the action's words, but it is said elsewhere (and says as much of that line)."""
+    s = summary(decisions=[{"text": "Release on 15 March and send the numbers.", "evidence": "00:13"}])
+    grounded, warnings = ground(s, transcript)
+    assert [d.evidence for d in grounded.decisions] == ["00:13"] and warnings == []
 
 
 def test_a_source_outside_the_attachments_is_removed(transcript):
@@ -210,3 +212,158 @@ def test_a_decision_that_says_who_does_a_task_is_that_task(transcript):
     )
     grounded, warnings = ground(s, transcript)
     assert grounded.decisions == [] and warnings == ["decisions[0]: repeats the action item at 00:00, removed"]
+
+
+def test_evidence_moves_to_the_line_that_says_the_item(transcript):
+    """M3 runs: M04 cited 00:00 for every item, M01 a time one line off (D29)."""
+    s = summary(
+        decisions=[{"text": "We release on the fifteenth of March.", "evidence": "00:00"}],
+        action_items=[{"task": "Send the numbers by Wednesday", "owner": "Omar", "due": None, "evidence": None}],
+        open_questions=[{"question": "Who presents at the all hands?", "evidence": "09:59"}],
+    )
+    grounded, warnings = ground(s, transcript)
+    assert grounded.decisions[0].evidence == "00:13"
+    assert grounded.action_items[0].evidence == "00:00"
+    assert grounded.open_questions[0].evidence == "01:15"
+    assert warnings == [
+        "action_items[0]: evidence missing, set to '00:00'",
+        "decisions[0]: evidence '00:00' (a line that says less of it) moved to '00:13'",
+        "open_questions[0]: evidence '09:59' (not inside any segment) moved to '01:15'",
+    ]
+
+
+def test_evidence_stays_when_no_line_says_more(transcript):
+    s = summary(decisions=[{"text": "Book a room.", "evidence": "00:07"}])  # no line shares two words with it
+    grounded, warnings = ground(s, transcript)
+    assert grounded.decisions[0].evidence == "00:07" and warnings == []
+
+
+def test_the_owner_must_be_named_near_the_task(transcript):
+    """M3 runs: models gave "I will update the release notes" to an attendee nobody named there (D29)."""
+    s = summary(
+        action_items=[
+            {"task": "Ask who presents at the all hands", "owner": "Omar", "due": None, "evidence": "01:15"},
+            {"task": "Send the numbers", "owner": "Omar", "due": None, "evidence": "00:07"},
+        ]
+    )
+    grounded, warnings = ground(s, transcript, attendees=("Omar", "Sara"))
+    assert [a.owner for a in grounded.action_items] == [None, "Omar"]  # 01:15 is 3 segments after "Omar, ..."
+    assert "action_items[0]: owner 'Omar' is not named where the task is said, removed" in warnings
+
+
+def test_digits_and_number_words_are_the_same_words():
+    """A model writes "April 9th" where Whisper wrote "the ninth of April" (M04, D29)."""
+    from meeting.words import content_words, number_word
+
+    assert [number_word(w) for w in ["9th", "15", "1st", "21st", "20th", "30", "2026", "next"]] == [
+        "ninth",
+        "fifteen",
+        "first",
+        "twenty first",
+        "twentieth",
+        "thirty",
+        "2026",
+        "next",
+    ]
+    assert content_words("Launch on April 9th") <= content_words("We launch the new website on the ninth of April")
+
+
+def test_the_line_where_the_task_is_given_wins(transcript):
+    """M3 runs: "Get new icons approved by Friday" cited at the line that only mentions the icons; the owner's name
+    and the deadline count as words of the task, so "Lina, can you get the new icons approved by Friday?" wins,
+    and the owner stays (D32). Here: "Omar, please send the numbers by Wednesday" over "Sure, I will send them"."""
+    s = summary(
+        action_items=[{"task": "Send the numbers", "owner": "Omar", "due": "by Wednesday", "evidence": "00:07"}]
+    )
+    grounded, warnings = ground(s, transcript)
+    assert (grounded.action_items[0].evidence, grounded.action_items[0].owner) == ("00:00", "Omar")
+    assert warnings == ["action_items[0]: evidence '00:07' (a line that says less of it) moved to '00:00'"]
+
+
+def test_among_equal_lines_the_nearest_to_the_cited_time_wins():
+    """M3 round 3 (granite4, M06): "The customer demo will be held on Wednesday" moved to the opening line about
+    "the customer demo" instead of "The demo stays on Wednesday" next to the cited time (D32)."""
+    from factories import make_transcript
+
+    t = make_transcript(
+        (0, 4, "Two things today: the customer demo and our release rhythm."),
+        (5, 9, "I suggest we move it to Thursday."),
+        (10, 14, "Thursday is bad for the customer."),
+        (15, 18, "Yes. The demo stays on Wednesday."),
+    )
+    s = summary(decisions=[{"text": "Demo on Wednesday, for the customer", "evidence": "00:10"}], action_items=[])
+    assert ground(s, t)[0].decisions[0].evidence == "00:15"  # 2 words each with 00:00; 00:15 is nearer
+
+
+def test_the_attendee_addressed_just_before_becomes_the_owner():
+    """M3 runs (M04): "Hana, the figures on page two ... are from last year." then "You are right. I will update the
+    figures ... by Tuesday."; models wrote Yusuf or nobody (D32)."""
+    from factories import make_transcript
+
+    t = make_transcript(
+        (0, 6, "Hello Yusuf, hello Hana."),
+        (20, 26, "Hana, the figures on page two of the budget sheet are from last year."),
+        (27, 28, "You are right."),
+        (29, 34, "I will update the figures on page two of the budget sheet by Tuesday."),
+        (35, 38, "And I will check the ad prices with the agency."),
+    )
+    s = summary(
+        decisions=[],
+        action_items=[
+            {"task": "Update the budget figures", "owner": "Yusuf", "due": "by Tuesday", "evidence": "00:00"},
+            {"task": "Check the ad prices", "owner": "Yusuf", "due": None, "evidence": "00:35"},
+        ],
+    )
+    grounded, warnings = ground(s, t, attendees=("Noor", "Yusuf", "Hana"))
+    assert [(a.evidence, a.owner) for a in grounded.action_items] == [("00:29", "Hana"), ("00:35", None)]
+    assert "action_items[0]: owner set to 'Hana', addressed where the task is given" in warnings
+
+
+def test_an_address_about_another_task_gives_no_owner():
+    """Like H01: "Omar, please get two quotes from other vendors." / "I will have two quotes ..." / "I will write
+    to the current vendor about the delays." The third is someone else's task: no owner (D32)."""
+    from factories import make_transcript
+
+    t = make_transcript(
+        (0, 4, "Omar, please get two quotes from other vendors by the end of the month."),
+        (5, 8, "I will have two quotes by the end of the month."),
+        (9, 12, "I will write to the current vendor about the delays."),
+    )
+    s = summary(
+        decisions=[],
+        action_items=[
+            {"task": "Write to the vendor about the delays", "owner": None, "due": None, "evidence": "00:09"}
+        ],
+        open_questions=[],
+    )
+    grounded, warnings = ground(s, t, attendees=("Sara", "Omar", "Lina"))
+    assert grounded.action_items[0].owner is None and warnings == []
+
+
+def test_evidence_does_not_move_to_an_agenda_line_far_away():
+    """M3 round 2 (M05, M06): items moved to the opening line that lists the topics (D31)."""
+    from factories import make_transcript
+
+    t = make_transcript(
+        (0, 8, "Three topics today: the training, the articles and the rota."),
+        (100, 104, "Nice weather today."),
+        (110, 116, "Who will run the training for the refunds?"),
+    )
+    s = summary(
+        decisions=[],
+        action_items=[],
+        open_questions=[{"question": "Who runs the refund training?", "evidence": "01:40"}],
+    )
+    grounded, warnings = ground(s, t)
+    assert grounded.open_questions[0].evidence == "01:50"  # within 60 s of the cited line, not 00:00
+    assert warnings == ["open_questions[0]: evidence '01:40' (a line that says less of it) moved to '01:50'"]
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["Demo recording is an idea, not decided", "Release rhythm discussion postponed", "Weekly releases not yet agreed"],
+)
+def test_a_decision_that_says_it_was_not_decided_is_removed(transcript, text):
+    """M3 round 2: granite4 listed "Demo recording is an idea, not decided" as a decision (M06's forbidden item)."""
+    grounded, warnings = ground(summary(decisions=[{"text": text, "evidence": "00:13"}]), transcript)
+    assert grounded.decisions == [] and warnings == ["decisions[0]: says it was not decided, removed"]

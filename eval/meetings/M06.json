@@ -32,7 +32,7 @@
       {"keywords": [["weekly"]], "lines": [10, 11, 12, 13]}
     ],
     "forbidden": [
-      [["demo"], ["thursday"]],
+      [["demo"], ["on thursday", "to thursday"]],
       [["record"]]
     ]
   }

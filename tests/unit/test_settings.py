@@ -11,9 +11,9 @@ def test_defaults_are_the_laptop_values():
     assert settings.stt_threads == default_threads()
     assert 1 <= settings.stt_threads <= 8
     assert settings.openai_base_url == "http://127.0.0.1:11434/v1"
-    assert settings.chat_model == "phi4-mini:3.8b"
-    assert settings.chat_reasoning_effort == ""
-    assert settings.summary_max_tokens == 1500
+    assert settings.chat_model == "qwen3.5:4b"  # D33
+    assert settings.chat_reasoning_effort == "none"  # thinking off (D27, D33)
+    assert settings.summary_max_tokens == 3000  # D31: granite4 needed more than 1,500 for one AMI part
     assert settings.transcript_max_chars == 100000  # D24: long meetings are split, so the limit is the job's
     assert settings.part_max_chars == 6000
     assert settings.attachment_context_chars == 4000

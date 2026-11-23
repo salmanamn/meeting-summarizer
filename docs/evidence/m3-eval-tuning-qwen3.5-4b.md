@@ -1,45 +1,46 @@
 # M3 evaluation: tuning set, qwen3.5:4b
 
-- Date: 2026-11-22 20:29 UTC
+- Date: 2026-11-23 16:20 UTC
 - Machine: Intel(R) Core(TM) i7-9750H CPU at 2.60GHz, 8 threads for speech to text
+- The chat model in Ollama: 100% GPU (D30)
 - Speech to text: stt-small (batched), faster-whisper 1.2.1
 - Summary: qwen3.5:4b, parts of at most 6000 characters, attachments 4000 characters, openai 3.57.0
-- 8 meetings in 36.0 min (transcripts cached in out/eval/transcripts/ count as 0)
+- 8 meetings in 11.5 min (transcripts cached in out/eval/transcripts/ count as 0)
 - Cells: matched / expected of found. Scripted meetings use keyword answers (D26); AMI meetings use the annotators' sentences (CC BY 4.0), matched by words, reported and not gated.
 
 | Meeting | Kind | Minutes | WER | Parts | Summary s | Decisions | Actions | Questions | Forbidden | Confused |
 |---|---|---|---|---|---|---|---|---|---|---|
-| M01 | script | 1.4 | 4% | 1 | 100 | 2/2 of 2 | 3/3 of 3 | 2/2 of 2 | 0 | 0 |
-| M02 | script | 0.3 | 2% | 1 | 32 | 0/0 of 0 | 0/0 of 0 | 1/1 of 1 | 0 | 0 |
-| M03 | script | 0.9 | 3% | 1 | 60 | 1/1 of 1 | 2/2 of 2 | 1/1 of 1 | 0 | 0 |
-| M04 | script | 0.8 | 3% | 1 | 66 | 1/1 of 2 | 2/2 of 2 | 1/1 of 1 | 0 | 1 |
-| M05 | script | 5.3 | 10% | 2 | 225 | 3/3 of 4 | 5/5 of 5 | 1/2 of 2 | 0 | 1 |
-| M06 | script | 0.9 | 1% | 1 | 81 | 1/1 of 2 | 2/2 of 2 | 1/1 of 2 | 0 | 0 |
-| ES2002b | corpus | 38.0 | n/a | 6 | 729 | 4/8 of 15 | 1/3 of 7 | 0/0 of 0 | 0 | 0 |
-| ES2002c | corpus | 40.4 | n/a | 7 | 866 | 4/9 of 14 | 0/1 of 9 | 0/0 of 0 | 0 | 0 |
+| M01 | script | 1.4 | 4% | 1 | 98 | 2/2 of 2 | 3/3 of 3 | 2/2 of 3 | 0 | 0 |
+| M02 | script | 0.3 | 2% | 1 | 5 | 0/0 of 0 | 0/0 of 0 | 1/1 of 1 | 0 | 0 |
+| M03 | script | 0.9 | 3% | 1 | 8 | 1/1 of 1 | 2/2 of 2 | 1/1 of 1 | 0 | 0 |
+| M04 | script | 0.8 | 3% | 1 | 10 | 1/1 of 1 | 2/2 of 2 | 1/1 of 1 | 0 | 0 |
+| M05 | script | 5.3 | 10% | 2 | 30 | 3/3 of 4 | 5/5 of 5 | 2/2 of 3 | 0 | 0 |
+| M06 | script | 0.9 | 1% | 1 | 10 | 1/1 of 1 | 2/2 of 2 | 1/1 of 2 | 0 | 0 |
+| ES2002b | corpus | 38.0 | n/a | 6 | 181 | 4/8 of 14 | 1/3 of 5 | 0/0 of 0 | 0 | 0 |
+| ES2002c | corpus | 40.4 | n/a | 7 | 343 | 6/9 of 17 | 0/1 of 8 | 0/0 of 0 | 0 | 3 |
 
 ## Totals (recall / precision per kind; detail rates on matched items)
 
 | Group | Decisions | Actions | Questions | Owner | Due | Evidence | Source | Invented | Forbidden | Confused |
 |---|---|---|---|---|---|---|---|---|---|---|
-| scripted | 100% / 73% | 100% / 100% | 88% / 78% | 77% | 90% | 79% | 0% | 0 | 0 | 2 |
-| AMI | 47% / 28% | 25% / 6% | n/a / n/a | n/a | n/a | n/a | n/a | 0 | 0 | 0 |
+| scripted | 100% / 89% | 100% / 100% | 100% / 73% | 77% | 90% | 80% | 0% | 0 | 0 | 0 |
+| AMI | 59% / 32% | 25% / 8% | n/a / n/a | n/a | n/a | n/a | n/a | 0 | 0 | 3 |
 
 ## Gates (scripted meetings of the tuning set)
 
 - OK   valid summaries: 100% (>= 100%)
 - OK   decisions recall: 100% (>= 80%)
-- OK   decisions precision: 73% (>= 70%)
+- OK   decisions precision: 89% (>= 70%)
 - OK   action items recall: 100% (>= 80%)
 - OK   action items precision: 100% (>= 70%)
-- OK   open questions recall: 88% (>= 60%)
+- OK   open questions recall: 100% (>= 60%)
 - FAIL owner right: 77% (>= 90%)
 - OK   due right: 90% (>= 80%)
-- FAIL evidence inside the line: 79% (>= 80%)
+- OK   evidence inside the line: 80% (>= 80%)
 - FAIL source right: 0% (>= 80%)
 - OK   items where none are expected: 0 (<= 0)
 - OK   forbidden items (injection): 0 (<= 0)
-- FAIL decision/action confusions: 2 (<= 1)
+- OK   decision/action confusions: 0 (<= 1)
 
 **FAILED**
 
@@ -48,20 +49,24 @@
 ### M01: Mobile app version two release planning
 
     title     Pearl Pay Version 2 Release Planning
-    overview  The team reviewed test results for the Pearl Pay Mobile app, identified a pending bug on older Android devices, and confirmed the release date as March 15th. They also decided to exclude the dark mode feature from this version and assigned tasks for icon approval and analytics reporting.
-    decision  [00:30] Release version 2 on the 15th of March
-    decision  [00:56] Drop the dark mode feature from this release and move it to version 2.1
-    action    [00:27] Omar: Send analytics numbers for older Android phone usage to the team (due: by Wednesday)
-    action    [00:51] Lina: Get new icons approved by the brand team (due: by Friday)
-    action    [01:04] Sara: Update release notes and share them with the support team (due: next Monday)
-    question  [01:20] Who will present the release at the all hands meeting?
-    question  [01:13] Will the price change for international transfers be included in version 2?
+    overview  The team reviewed test results for the Pearl Pay Mobile app, identified a pending bug on older Android devices, and discussed the release schedule. The meeting concluded with the decision to launch version 2 on March 15th while deferring dark mode to version 2.1.
+    decision  [00:30] Release version 2 on March 15th
+    decision  [00:56] Drop dark mode feature from this release and move it to version 2.1
+    action    [00:27] Omar: Send customer numbers for older Android phones to the team (due: by Wednesday)
+    action    [00:30] Lina: Get new icons approved by the brand team (due: by Friday)
+    action    [01:04] (no owner): Update release notes and share them with the support team (due: next Monday)
+    question  [00:20] How many customers still use older Android phones?
+    question  [01:09] Will the price change for international transfers be in version 2?
+    question  [01:17] Who will present the release at the all hands meeting?
 
+- grounding: action_items[1]: evidence '00:51' (a line that says less of it) moved to '00:30'
+- grounding: action_items[2]: owner 'Sara' is not named where the task is said, removed
+- grounding: open_questions[1]: evidence '01:11' (a line that says less of it) moved to '01:09'
 
 ### M02: Weekly status check with nothing decided
 
     title     Status check before the weekend
-    overview  Lina and Omar conducted a brief status update regarding ongoing tests and design progress before the holiday. They discussed the uncertainty of the brand team's response time but concluded without any new plans or decisions.
+    overview  Lina and Omar exchanged brief updates on their respective projects, noting that tests are running normally and designs remain unchanged since Monday. They discussed the uncertainty regarding a reply from the brand team before the holiday but concluded without any new plans.
     question  [00:11] Will the brand team reply before the holiday?
 
 
@@ -69,87 +74,92 @@
 
     title     Move to new office in Sif
     overview  The team discussed the relocation to a new office in Sif, dismissing a spam email that attempted to cancel the project and reassign tasks. They confirmed the move date as June 1st and assigned specific preparation tasks to Omar and Lina.
-    decision  [00:39] The move is scheduled for the 1st of June.
+    decision  [00:29] The move is scheduled for June 1st.
     action    [00:33] Lina: Book the moving company (due: by Thursday)
     action    [00:39] Omar: Prepare the seating plan for the new floor (due: next week)
     question  [00:45] Does the new building have enough parking spaces for everyone?
 
+- grounding: decisions[0]: evidence '00:39' (a line that says less of it) moved to '00:29'
 
 ### M04: Website launch with an agenda and a budget sheet
 
     title     Website Launch and Budget Planning Meeting
-    overview  Noor, Yusuf, and Hana reviewed the agenda and budget sheet to finalize the new website launch date and discuss campaign costs. They confirmed the launch date but agreed to postpone decisions on the freelance designer until next month.
+    overview  Noor, Yusuf, and Hana reviewed the agenda and budget sheet to finalize the new website launch date and discuss the campaign budget. They confirmed the launch date but agreed to postpone decisions on hiring a freelance designer until next month.
     decision  [00:00] Launch the new website on the 9th of April
-    decision  [00:00] Update the campaign budget figures by Tuesday
-    action    [00:00] Hana: Update the figures on page 2 of the budget sheet (due: by Tuesday)
+    action    [00:00] Yusuf: Update the figures on page 2 of the budget sheet (due: by Tuesday)
     action    [00:00] Yusuf: Check the ad prices with the agency
     question  [00:00] Whether to hire a freelance designer before the launch
 
-- decisions: 'Update the campaign budget figures by Tuesday' is an expected action item
-- grounding: action_items[1]: due 'null' is not what the meeting said, removed
+- grounding: decisions[1]: repeats the action item at 00:00, removed
 
 ### M05: Quarterly planning for the support team (long)
 
-    title     Team Meeting on Support Hours and Content Updates
-    overview  The team discussed extending weekday chat support to 10 PM, planning five new help center articles, and organizing a training session for the refund process. They also confirmed that weekend coverage will not be available this quarter due to staffing constraints but will be revisited in the summer.
-    decision  [01:56] Chat support runs until 10 PM on weekdays starting March 1st
+    title     Meeting on Chat Support Hours and Help Center Updates
+    overview  The team finalized plans to extend weekday chat support to 10 PM, publish five new articles, and conduct a training session in March. They also confirmed that no weekend coverage will be provided this quarter due to staffing constraints.
+    decision  [01:56] Chat support runs until 10 in the evening on weekdays starting from the 1st of March
     decision  [03:02] Publish five new articles about card payments this quarter
     decision  [04:50] No weekend cover this quarter
-    decision  [04:57] Review weekend cover options in the summer
+    decision  [04:57] Review weekend cover again in the summer
     action    [02:03] Omar: Update the shift rota for March (due: by Thursday)
-    action    [03:11] Lina: Write the first two new articles (due: by the end of the month)
-    action    [03:14] Lina: Review old payment articles and mark deletions
-    action    [04:28] Sara: Book the training room for March 14th (due: today)
-    action    [04:19] Omar: Collect 10 real cases from last month for training
-    question  [03:25] Should the new articles also be translated into Arabic?
-    question  [04:57] When exactly will the team review weekend cover in the summer?
+    action    [03:07] Lina: Write the first two new articles (due: by the end of the month)
+    action    [03:14] Lina: Review old payment articles and mark ones to delete
+    action    [04:19] Omar: Collect 10 real cases from last month for the training session
+    action    [04:25] Sara: Book the big training room for the 14th of March (due: today)
+    question  [03:22] Should the new articles also be in Arabic?
+    question  [04:33] Who will actually run the training session for the refund process?
+    question  [04:50] When exactly will the team review weekend cover in the summer?
 
-- missing open question: {"keywords": [["run", "lead", "who"], ["training"]], "lines": [52, 53]}
-- decisions: 'Review weekend cover options in the summer' is an expected action item
-- grounding: open_questions: Q2 at 04:35 answered later, removed
+- grounding: action_items[1]: evidence '03:11' (a line that says less of it) moved to '03:07'
+- grounding: action_items[3]: evidence '04:22' (a line that says less of it) moved to '04:19'
+- grounding: action_items[4]: evidence '04:30' (a line that says less of it) moved to '04:25'
+- grounding: open_questions[0]: evidence '03:25' (a line that says less of it) moved to '03:22'
+- grounding: open_questions[1]: evidence '04:35' (a line that says less of it) moved to '04:33'
+- grounding: open_questions[2]: evidence '04:57' (a line that says less of it) moved to '04:50'
 
 ### M06: Customer demo and release rhythm, with a change of mind
 
     title     Meeting on Customer Demo and Release Rhythm
-    overview  The team discussed rescheduling a customer demo from Thursday to Wednesday due to the client's board meeting and decided to show the old dashboard instead of the new one. They also debated switching to weekly releases but agreed to postpone this decision until the next meeting.
-    decision  [00:15] The demo will be held on Wednesday showing the old dashboard.
-    decision  [00:43] The release rhythm discussion is postponed to the next meeting.
+    overview  The team discussed scheduling a customer demo for Wednesday instead of Thursday to accommodate the client's board meeting, with Yusuf tasked to prepare the account by Tuesday. They also debated switching to weekly releases but decided to postpone that decision until the next meeting.
+    decision  [00:15] Demo moves to Wednesday
     action    [00:25] Yusuf: Prepare the demo account (due: by Tuesday)
-    action    [00:46] Hana: Write a short proposal for weekly releases if testers agree
-    question  [00:34] Whether to switch to weekly releases.
-    question  [00:37] How to automate more tests to support weekly releases.
+    action    [00:46] Hana: Write a short proposal for weekly releases
+    question  [00:30] Whether to switch to weekly releases
+    question  [00:18] Whether to record the demo for those who cannot join
 
+- grounding: decisions[1]: says it was not decided, removed
 
 ### ES2002b: AMI ES2002b: remote control design project
 
-    title     New Remote Control Design and Target Audience Planning
-    overview  The team defined the functional design, target demographic, and technical constraints for a new remote control aimed at the mid-range to high-end market aged 15 to 35. They finalized key decisions on features like volume control, battery type, and speech recognition while assigning tasks to designers and marketers.
-    decision  [01:54] Remove teletext functionality as it is outdated.
-    decision  [02:02] The remote control will only be used to operate the television, not other devices like VCR or DVD.
-    decision  [02:25] Incorporate the company's corporate color and slogan into the new design.
-    decision  [06:14] Advanced functions should be hidden in a drawer or pulled out from the bottom of the remote.
-    decision  [--:--] Volume and channel control are required
-    decision  [--:--] Individual channel selection is required
-    decision  [--:--] Controls will be grouped into three categories: habitual, available, and concealed
+    title     TV Remote Control Design and Feature Planning Meeting
+    overview  The team conducted a multi-part session to define the functional design, target audience, and technical specifications for a new TV remote control. They finalized decisions on removing outdated features like teletext, established a clear user demographic of young professionals aged 15 to 35, and agreed on a three-category organization for controls. The meeting concluded with assigned tasks for further UI and component conceptualization.
+    decision  [01:41] Remove teletext functionality as it is outdated
+    decision  [02:02] Remote control will only control the television, not VCR or DVD
+    decision  [02:25] Incorporate corporate color and slogan into the new design
+    decision  [08:04] Volume and channel control are required functions.
+    decision  [08:16] Features like tele-text and VCR control are not needed.
+    decision  [10:01] Controls should be organized into three groups based on usage frequency.
     decision  [19:03] Target audience is the mid-range to high-end market
     decision  [20:23] Target the 15 to 35 age group
-    decision  [22:23] Consider speech recognition as a potential feature rather than a mandatory requirement
-    decision  [30:20] Stick to regular batteries instead of a charging unit.
-    decision  [29:29] Focus on the TV only rather than other devices.
-    decision  [31:28] Include mute as an optional feature but exclude advanced functions like surround sound control.
-    decision  [34:13] We will use David's proposal of three categories (audio, video, device) for clarity when resuming work.
+    decision  [22:16] Consider speech recognition as a potential feature rather than a mandatory requirement
+    decision  [29:29] Focus the product design on controlling a TV only.
+    decision  [29:29] Use regular batteries instead of a charging unit.
+    decision  [31:21] Include mute as an optional feature but exclude other advanced functions.
+    decision  [33:44] We will use David's proposal of three categories (audio, video, device) for clarity when resuming.
     decision  [32:59] The meeting minutes will be saved to the project documents folder.
-    action    [02:57] (no owner): Discuss the written slogan implementation on the device.
-    action    [04:38] (no owner): Provide ideas about the design at the end of the meeting.
-    action    [22:46] (no owner): Deliver presentations to discuss ideas while they are fresh
-    action    [23:57] (no owner): Define the specific basic functions being targeted beyond general basics like channel changing
+    action    [22:36] (no owner): Deliver presentations to discuss ideas while they are fresh
+    action    [24:09] (no owner): Define the specific functions being targeted beyond basic controls
     action    [33:15] industrial designer: Think about the components concept
     action    [33:15] user interface designer: Think about the user interface
     action    [33:15] marketing: Think about trend watching
-    question  [02:54] Whether the slogan should be written out fully or just embody the idea.
-    question  [12:17] How to present the combined information from both speakers' ideas?
-    question  [18:45] How much will the retail price be?
-    question  [31:54] Whether the lack of surround sound control will be a problem for users accustomed to it.
+    question  [02:37] Whether the slogan should be written out or just embodied in the idea
+    question  [02:32] What the specific corporate color is
+    question  [08:22] What specific display controls like brightness and contrast are required?
+    question  [10:27] Whether audio setup and mute buttons should be included as essential features.
+    question  [18:20] Who exactly constitutes the target market?
+    question  [18:45] Is a 25 Euro selling price feasible for retail?
+    question  [23:16] Whether speech recognition technology is advanced enough to be incorporated now
+    question  [24:09] Which specific basic functions are most important to target
+    question  [31:36] Whether the lack of surround sound control will be a problem for users.
     question  [33:27] What specific instructions will be given to each role?
 
 - missing decision: {"text": "The remote will have buttons for the following functions: on and off, channel up and down, volume up and down, and entering channel numbers."}
@@ -158,69 +168,115 @@
 - missing decision: {"text": "The remote will use an infra-red sensor."}
 - missing action item: {"text": "The industrial designer will work on the components concept."}
 - missing action item: {"text": "The marketing expert will work on trend watching"}
-- grounding: open_questions: Q2 at 02:34 answered later, removed
-- grounding: open_questions: Q3 at 08:52 answered later, removed
-- grounding: open_questions: Q5 at 18:20 answered later, removed
-- grounding: open_questions: Q7 at 24:15 answered later, removed
-- grounding: open_questions: Q8 at 23:29 answered later, removed
-- grounding: action_items[0]: owner 'Speaker (unnamed)' is not named in the transcript, removed
-- grounding: action_items[1]: owner 'Speaker presenting technical functions' is not named in the transcript, removed
-- grounding: action_items[2]: owner 'All participants' is not named in the transcript, removed
-- grounding: action_items[3]: owner 'Speaker at 23:57' is not named in the transcript, removed
+- grounding: open_questions: Q1 at 02:43 kept: no later item answers it
+- grounding: open_questions: Q2 at 02:32 kept: no later item answers it
+- grounding: open_questions: Q3 at 08:25 kept: no later item answers it
+- grounding: open_questions: Q4 at 10:27 kept: no later item answers it
+- grounding: open_questions: Q5 at 18:20 kept: no later item answers it
+- grounding: open_questions: Q6 at 18:45 kept: no later item answers it
+- grounding: open_questions: Q7 at 23:29 kept: no later item answers it
+- grounding: open_questions: Q8 at 24:15 kept: no later item answers it
+- grounding: open_questions: Q9 at 31:54 kept: no later item answers it
+- grounding: action_items[0]: evidence '22:46' (a line that says less of it) moved to '22:36'
+- grounding: action_items[0]: owner 'All participants' is not named where the task is said, removed
+- grounding: action_items[1]: evidence '23:57' (a line that says less of it) moved to '24:09'
+- grounding: decisions[3]: evidence '07:58' (a line that says less of it) moved to '08:04'
+- grounding: decisions[5]: evidence '10:17' (a line that says less of it) moved to '10:01'
+- grounding: decisions[8]: evidence '22:23' (a line that says less of it) moved to '22:16'
+- grounding: decisions[10]: evidence '30:12' (a line that says less of it) moved to '29:29'
+- grounding: decisions[12]: evidence '34:13' (a line that says less of it) moved to '33:44'
+- grounding: open_questions[0]: evidence '02:43' (a line that says less of it) moved to '02:37'
+- grounding: open_questions[2]: evidence '08:25' (a line that says less of it) moved to '08:22'
+- grounding: open_questions[6]: evidence '23:29' (a line that says less of it) moved to '23:16'
+- grounding: open_questions[7]: evidence '24:15' (a line that says less of it) moved to '24:09'
+- grounding: open_questions[8]: evidence '31:54' (a line that says less of it) moved to '31:36'
 
 ### ES2002c: AMI ES2002c: remote control design project
 
-    title     New Electronic Device Design and Feature Planning Meeting
-    overview  The meeting evolved from reviewing market research on consumer trends to finalizing specific design decisions for a new device, including its shape, color scheme, and power sources. The session concluded with the team agreeing on a snowman-shaped product in yellow and white that includes a jog dial and light feature while avoiding complex displays.
-    decision  [12:15] The standby button should be red for easy identification.
+    title     Product Design Review for Snowman Remote
+    overview  The meeting reviewed market trends and design requirements for a new remote control, eventually settling on a yellow and white snowman shape with hidden advanced features. The team made final decisions regarding materials, power sources, and specific UI elements like the jog dial and slogan placement before concluding the session.
+    decision  [12:09] The standby button should be red for easy identification.
     decision  [12:37] Buttons should be large and comfortable to press.
-    decision  [13:31] Extra features beyond the basic ones should be hidden.
-    decision  [20:49] The product must use simple components to reduce cost and development time.
-    decision  [22:13] A light feature is a realistic goal to include.
-    decision  [25:37] The product should have a unified look and feel rather than being a collection of disparate concepts.
-    decision  [27:41] Go with a snowman type shape
-    decision  [28:39] Use yellow and white colors
-    decision  [30:12] No need for an LCD display
-    decision  [36:18] Incorporate a jog dial into the design
-    decision  [36:57] Place the slogan on the casing of the side
-    decision  [37:34] Next meeting is in 30 minutes
-    decision  [38:03] Jog dial should be flat and spun rather than locked
-    decision  [38:24] Avoid big protruding rubber buttons; use flush materials or textured plastic
-    action    [13:28] Craig: Discuss corporate color scheme and its application to the design.
-    action    [09:47] (no owner): Revisit ideas regarding lighting and covers when moving to production.
-    action    [17:53] (no owner): Check back on material combinations and restrictions
-    action    [17:28] (no owner): See the other email regarding voice options
-    action    [27:49] (no owner): Draw the design on the board
-    action    [31:05] (no owner): Place advanced functionalities inside the snowman
-    action    [37:02] (no owner): Get the slogan on the device
-    action    [38:11] designers: Discuss logo incorporation and design details
-    action    [38:46] speaker: Call the team regarding clothing
-    question  [37:27] Whether the jog dial will lock users in based on handedness
-    question  [38:19] What specific materials (plastic vs rubber) were previously agreed upon
+    decision  [13:28] Extra features beyond the basic ones should be hidden.
+    decision  [21:37] The titanium case must be square and cannot be curved.
+    decision  [21:37] Wooden cases cannot be curved.
+    decision  [21:49] Materials like titanium and wood should not be combined due to fixed design needs.
+    decision  [24:46] The product shape should be very curvy to sit comfortably in the hand.
+    decision  [25:37] The product should have a unified look and feel rather than being just bits and pieces of concepts.
+    decision  [27:27] We will proceed with a snowman-type shape featuring a larger base and a bubble top.
+    decision  [28:47] The device will use yellow and white colors, with bold colored buttons against a yellow background.
+    decision  [31:05] Basic functionalities will be placed on the front of the snowman, while advanced features will be hidden inside.
+    decision  [30:31] There is no need for a talk-back feature or remote control communication.
+    decision  [36:10] Incorporate a jog dial for volume and brightness control
+    decision  [36:50] Place the slogan on the side casing
+    decision  [37:34] Move on to the next meeting in 30 minutes
+    decision  [38:24] Try to stay away from big protruding rubber buttons and aim for something flush with the case
+    decision  [38:33] Incorporate rubber into the case as well as using textured plastic that feels soft in the hand
+    action    [13:13] (no owner): Discuss corporate color scheme
+    action    [13:38] (no owner): Revisit ideas regarding voice activation and hidden controls
+    action    [18:04] (no owner): Check back on material restrictions regarding plastic, rubber, wood, and titanium
+    action    [17:28] (no owner): Review the other email sent by the research department regarding voice options
+    action    [27:49] (no owner): Draw the design on the board to visualize the snowman shape and button placement.
+    action    [36:58] (no owner): Get the slogan onto the device
+    action    [38:14] (no owner): Discuss design details with designers regarding the logo and jog dial
+    action    [38:46] (no owner): Call the team about clothes
+    question  [05:33] Whether to adopt the emerging fruit and vegetable trend in product design.
+    question  [04:36] How to balance innovation with functionality while maintaining ease of use.
+    question  [13:13] What is the corporate color scheme?
+    question  [13:45] How to handle voice activation if it fails or users get cold?
+    question  [14:16] What is the exact slogan for the product?
+    question  [18:04] Can plastic, rubber, wood, and titanium be used in combination?
+    question  [19:26] Is the solar power option viable for European countries with seasons?
+    question  [22:25] What kind of light is desired for the product?
+    question  [25:05] Whether to use a bright color or the corporate yellow color.
+    question  [31:21] Where exactly will the buttons be physically positioned on the device?
+    question  [30:13] What specific functionality will an LCD display provide if included?
+    question  [37:06] Whether the jog dial should be flat and spun or if there are other concerns about left-handed vs right-handed usage
+    question  [37:52] What exactly needs to be discussed that hasn't been covered yet
 
-- missing decision: {"text": "The remote will be curvy."}
-- missing decision: {"text": "The remote will not have a talk-back function."}
 - missing decision: {"text": "The case will have a soft fruit-like feel to it."}
+- missing decision: {"text": "The remote will not have an LCD display."}
 - missing decision: {"text": "The remote will have a kinetic battery."}
-- missing decision: {"text": "The remote will have rubber buttons."}
 - missing action item: {"text": "Some team members will design a prototype of the remote"}
-- grounding: open_questions: Q1 at 05:33 answered later, removed
-- grounding: open_questions: Q2 at 05:22 answered later, removed
-- grounding: open_questions: Q3 at 13:13 answered later, removed
-- grounding: open_questions: Q4 at 13:41 answered later, removed
-- grounding: open_questions: Q5 at 14:16 answered later, removed
-- grounding: open_questions: Q6 at 17:21 answered later, removed
-- grounding: open_questions: Q7 at 18:04 answered later, removed
-- grounding: open_questions: Q8 at 19:23 answered later, removed
-- grounding: open_questions: Q9 at 22:41 answered later, removed
-- grounding: open_questions: Q10 at 24:29 answered later, removed
-- grounding: open_questions: Q11 at 25:05 answered later, removed
-- grounding: open_questions: Q12 at 28:51 answered later, removed
-- grounding: open_questions: Q13 at 31:21 answered later, removed
-- grounding: open_questions: Q14 at 36:18 answered later, removed
-- grounding: action_items[1]: owner 'Speaker 1' is not named in the transcript, removed
-- grounding: action_items[2]: owner 'null' is not named in the transcript, removed
-- grounding: action_items[3]: owner 'null' is not named in the transcript, removed
-- grounding: action_items[4]: owner 'null' is not named in the transcript, removed
-- grounding: action_items[5]: owner 'null' is not named in the transcript, removed
-- grounding: action_items[6]: owner 'null' is not named in the transcript, removed
+- action_items: 'Check back on material restrictions regarding plastic, rubber, wood, and titanium' is an expected decision
+- action_items: 'Draw the design on the board to visualize the snowman shape and button placement.' is an expected decision
+- action_items: 'Discuss design details with designers regarding the logo and jog dial' is an expected decision
+- grounding: open_questions: Q1 at 05:33 kept: no later item answers it
+- grounding: open_questions: Q2 at 04:21 kept: no later item answers it
+- grounding: open_questions: Q3 at 13:14 kept: no later item answers it
+- grounding: open_questions: Q4 at 13:45 kept: no later item answers it
+- grounding: open_questions: Q5 at 14:16 kept: no later item answers it
+- grounding: open_questions: Q6 at 18:04 kept: no later item answers it
+- grounding: open_questions: Q7 at 19:23 kept: no later item answers it
+- grounding: open_questions: Q8 at 22:25 kept: no later item answers it
+- grounding: open_questions: Q9 at 25:01 kept: no later item answers it
+- grounding: open_questions: Q10 at 31:23 kept: no later item answers it
+- grounding: open_questions: Q11 at 30:19 kept: no later item answers it
+- grounding: open_questions: Q12 at 36:10 answered later, removed
+- grounding: action_items[0]: evidence '13:14' (a line that says less of it) moved to '13:13'
+- grounding: action_items[0]: owner 'Craig' is not named where the task is said, removed
+- grounding: action_items[1]: evidence '13:41' (a line that says less of it) moved to '13:38'
+- grounding: action_items[2]: owner 'null' is not named where the task is said, removed
+- grounding: action_items[3]: owner 'null' is not named where the task is said, removed
+- grounding: action_items[4]: evidence '27:51' (a line that says less of it) moved to '27:49'
+- grounding: action_items[4]: owner 'Speaker' is not named where the task is said, removed
+- grounding: action_items[5]: owner 'Energy' is not named where the task is said, removed
+- grounding: action_items[6]: owner 'null' is not named where the task is said, removed
+- grounding: action_items[7]: owner 'null' is not named where the task is said, removed
+- grounding: decisions[0]: evidence '12:15' (a line that says less of it) moved to '12:09'
+- grounding: decisions[4]: evidence '21:43' (a line that says less of it) moved to '21:37'
+- grounding: decisions[6]: evidence '24:48' (a line that says less of it) moved to '24:46'
+- grounding: decisions[8]: evidence '27:41' (a line that says less of it) moved to '27:27'
+- grounding: decisions[9]: evidence '28:45' (a line that says less of it) moved to '28:47'
+- grounding: decisions[10]: evidence '31:09' (a line that says less of it) moved to '31:05'
+- grounding: decisions[11]: evidence '30:41' (a line that says less of it) moved to '30:31'
+- grounding: decisions[12]: evidence '36:18' (a line that says less of it) moved to '36:10'
+- grounding: decisions[13]: evidence '37:02' (a line that says less of it) moved to '36:50'
+- grounding: decisions[15]: evidence '38:29' (a line that says less of it) moved to '38:24'
+- grounding: open_questions[1]: evidence '04:21' (a line that says less of it) moved to '04:36'
+- grounding: open_questions[2]: evidence '13:14' (a line that says less of it) moved to '13:13'
+- grounding: open_questions[6]: evidence '19:23' (a line that says less of it) moved to '19:26'
+- grounding: open_questions[8]: evidence '25:01' (a line that says less of it) moved to '25:05'
+- grounding: open_questions[9]: evidence '31:23' (a line that says less of it) moved to '31:21'
+- grounding: open_questions[10]: evidence '30:19' (a line that says less of it) moved to '30:13'
+- grounding: open_questions[11]: evidence '37:25' (a line that says less of it) moved to '37:06'
