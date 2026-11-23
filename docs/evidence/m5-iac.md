@@ -1,0 +1,103 @@
+# Terraform (M5)
+
+## PR #10 (M5) checks
+```
+Graphify	pass	4m13s	https://app.graphify.com/salman-s-workspace-0437bd/reviews?run=45b4854b-ef1c-4a31-af20-b447a4d3ee96	
+iac-plan	pass	27s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280294365/job/138062677469	
+iac-static	pass	28s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280294365/job/138062677396	
+integration	pass	59s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280294365/job/138062676729	
+lint	pass	21s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280294365/job/138062677288	
+package	pass	25s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280294365/job/138062677421	
+tests-must-fail	pass	50s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280294365/job/138062677212	
+unit	pass	21s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280294365/job/138062677412	
+```
+
+## Gate demo, PR #11 (closed): Shared Key switched on
+```
+iac-plan	fail	33s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280932631/job/138064885655	
+iac-static	fail	2m14s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280932631/job/138064885389	
+Graphify	pass	1m26s	https://app.graphify.com/salman-s-workspace-0437bd/reviews?run=2c961860-bdaa-420d-a062-40ce7e26144f	
+integration	pass	56s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280932631/job/138064885912	
+lint	pass	14s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280932631/job/138064885848	
+package	pass	35s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280932631/job/138064885798	
+tests-must-fail	pass	46s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280932631/job/138064885696	
+unit	pass	22s	https://github.com/salmanamn/meeting-summarizer/actions/runs/45280932631/job/138064885936	
+mergeStateStatus at the time: BLOCKED
+```
+
+## iac.sh static (local run)
+```
+OK   terraform fmt
+OK   terraform validate infra/envs/local
+OK   terraform validate infra/envs/azure
+OK   checkov infra/envs/local (Passed checks: 37, Failed checks: 0, Skipped checks: 35)
+OK   checkov infra/envs/azure (Passed checks: 37, Failed checks: 0, Skipped checks: 35)
+39 tests, 39 passed, 0 warnings, 0 failures, 0 exceptions, 0 skipped
+```
+
+## iac.sh gate (local run, floci-az 0.16.0)
+```
+Plan: 41 to add, 0 to change, 0 to destroy.
+50 tests, 50 passed, 0 warnings, 0 failures, 0 exceptions
+OK       baseline: 50 tests, 50 passed, 0 warnings, 0 failures, 0 exceptions
+DENIED   storage-shared-key                     module.stack.module.deadletter[0].azurerm_storage_account.this: storage Shared Key auth must be disabled
+DENIED   storage-public-blobs                   module.stack.module.deadletter[0].azurerm_storage_account.this: anonymous blob access must be disabled
+DENIED   storage-tls-1.0                        module.stack.module.deadletter[0].azurerm_storage_account.this: storage minimum TLS must be TLS1_2
+DENIED   container-public                       module.stack.module.deadletter[0].azurerm_storage_container.this["eventgrid-deadletter"]: containers are private (recordings are meetings)
+DENIED   storage-trusted-services-bypass        module.stack.module.deadletter[0].azurerm_storage_account.this: no blanket trusted-services bypass; trust named resource instances instead (D39)
+DENIED   host-trusts-a-resource-instance        module.stack.module.storage.azurerm_storage_account.this: only the recordings account trusts a resource instance (the Speech account, D3)
+DENIED   package-in-recordings-account          module.stack.module.storage.azurerm_storage_container.this["app-package"]: the recordings account holds incoming/ and transcripts/ only (D38)
+DENIED   deadletter-shares-host-storage         module.stack.module.storage.azurerm_storage_container.this["app-package"]: shares a storage account with the Event Grid dead-letter container; dead-letters get an account of their own (Project 3 D25)
+DENIED   cosmos-account-keys                    module.stack.module.cosmos[0].azurerm_cosmosdb_account.this: Cosmos DB key auth must be disabled (local_authentication_enabled = false)
+DENIED   cosmos-provisioned-throughput          module.stack.module.cosmos[0].azurerm_cosmosdb_account.this: serverless (pay per request) for a lab that is idle most of the time
+DENIED   jobs-other-partition-key               module.stack.module.cosmos[0].azurerm_cosmosdb_sql_container.jobs: jobs are partitioned by /id = meeting id: every access is a point read (D17)
+DENIED   topic-other-source                     module.stack.module.blobevents[0].azurerm_eventgrid_system_topic.this: the topic must be the recordings account's system topic
+DENIED   events-every-type                      module.stack.module.blobevents[0].azurerm_eventgrid_system_topic_event_subscription.manifest[0]: BlobCreated only (D15)
+DENIED   events-every-blob                      module.stack.module.blobevents[0].azurerm_eventgrid_system_topic_event_subscription.manifest[0]: subject must begin /blobServices/default/containers/incoming/blobs/ and end /meeting.json, case-sensitive (D15)
+DENIED   events-cloudevents-schema              module.stack.module.blobevents[0].azurerm_eventgrid_system_topic_event_subscription.manifest[0]: the blobs extension's webhook reads the Event Grid schema
+DENIED   events-not-a-webhook                   module.stack.module.blobevents[0].azurerm_eventgrid_system_topic_event_subscription.manifest[0]: the Event Grid-based Blob trigger takes a webhook endpoint (/runtime/webhooks/blobs, D40)
+DENIED   events-unbounded-retries               module.stack.module.blobevents[0].azurerm_eventgrid_system_topic_event_subscription.manifest[0]: at most 5 delivery attempts, as the local stub (D15)
+DENIED   events-no-deadletter                   module.stack.module.blobevents[0].azurerm_eventgrid_system_topic_event_subscription.manifest[0]: undeliverable manifest events must be dead-lettered to blob
+DENIED   events-deadletter-elsewhere            module.stack.module.blobevents[0].azurerm_eventgrid_system_topic_event_subscription.manifest[0]: dead-letters go to the eventgrid-deadletter container, which has its own storage account
+DENIED   function-basic-auth-publish            module.stack.module.functionapp[0].azurerm_function_app_flex_consumption.this: basic-auth publishing credentials must be disabled
+DENIED   function-storage-connection-string     module.stack.module.functionapp[0].azurerm_function_app_flex_consumption.this: deployment storage must use a managed identity, not a connection string
+DENIED   function-http-allowed                  module.stack.module.functionapp[0].azurerm_function_app_flex_consumption.this: HTTPS only
+DENIED   function-python-3.12                   module.stack.module.functionapp[0].azurerm_function_app_flex_consumption.this: runtime must be python 3.13 (D12)
+DENIED   appinsights-local-auth                 module.stack.azurerm_application_insights.this[0]: Application Insights ingestion must require Entra ID
+DENIED   openai-api-keys                        module.stack.module.openai[0].azurerm_cognitive_account.this: Cognitive Services key auth must be disabled (local_auth_enabled = false)
+DENIED   openai-no-subdomain                    module.stack.module.openai[0].azurerm_cognitive_account.this: a custom subdomain is required for Entra ID tokens
+DENIED   openai-outbound-open                   module.stack.module.openai[0].azurerm_cognitive_account.this: outbound access must be restricted (data loss prevention)
+DENIED   openai-provisioned-throughput          module.stack.module.openai[0].azurerm_cognitive_deployment.chat: provisioned throughput (GlobalProvisionedManaged) is billed per hour whether used or not; use a Standard SKU
+DENIED   speech-user-assigned-identity          module.stack.module.speech[0].azurerm_cognitive_account.this: the Speech account needs a system-assigned identity to read recordings without SAS (D3)
+DENIED   speech-calls-two-hosts                 module.stack.module.speech[0].azurerm_cognitive_account.this: Speech may call exactly one host, the recordings account's blob endpoint (D41)
+DENIED   speech-calls-another-host              module.stack.module.speech[0].azurerm_cognitive_account.this: example.com is not the recordings account's blob host (D41)
+DENIED   diagnostics-other-workspace            module.stack.module.blobevents[0].azurerm_monitor_diagnostic_setting.topic[0]: diagnostics must go to log-slz-platform
+DENIED   diagnostics-missing                    module.stack.module.cosmos[0].azurerm_cosmosdb_account.this: no diagnostic setting in module.stack.module.cosmos[0]
+DENIED   role-owner                             module.stack.azurerm_role_assignment.app["appinsights"]: role /subscriptions/00000000-0000-0000-0000-000000000001/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635 is not on the data-plane allowlist
+DENIED   role-to-user                           module.stack.azurerm_role_assignment.app["appinsights"]: roles go to managed identities (ServicePrincipal); a User only gets Storage Blob Data Contributor
+DENIED   operator-writes-jobs                   module.stack.azurerm_cosmosdb_sql_role_assignment.operator[0]: only the app identity may write job records; anyone else reads
+DENIED   setting-connection-string              app setting RecordingsStorage: credentials in app settings are not allowed; use identity-based settings
+DENIED   setting-api-key                        app setting OPENAI_API_KEY: credentials in app settings are not allowed; use identity-based settings
+DENIED   setting-trigger-queue-missing          app setting RecordingsStorage__queueServiceUri missing: the trigger's identity-based connection is incomplete (D17)
+39/39 mutations denied
+```
+
+## iac.sh plan-azure (stack down)
+```
+Plan: 40 to add, 0 to change, 0 to destroy.
+50 tests, 50 passed, 0 warnings, 0 failures, 0 exceptions
+```
+
+## Known-bad changes to the code (local run)
+```
+KILLED   app-setting-name-typo              tests/unit/test_infra_contract.py
+KILLED   speech-host-from-the-account       tests/unit/test_infra_contract.py
+KILLED   deadletters-in-host-storage        tests/unit/test_infra_contract.py
+KILLED   package-gate-ignores-forbidden     tests/unit/test_package_size.py
+27/27 mutations killed
+```
+
+## Branch protection on main
+```
+{"checks":["lint","unit","tests-must-fail","integration","package","iac-static","iac-plan"],"enforce_admins":true,"linear":true,"strict":true}
+```
