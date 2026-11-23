@@ -6,7 +6,9 @@ reuses the stored transcript, attempts are bounded and a model error waits; the 
 can only be the transcript's times; grounding removes owners, deadlines, decisions and repeats the meeting did not
 say; the transcript cannot close its own block; an answer cut off is refused; long meetings keep a question unless a
 later item answers it; attachments are checked before Docling or pypdfium2 reads them; reasoning models get their
-own request shape; the status endpoint shows no Cosmos system fields; the package gate catches what must not ship.
+own request shape; the status endpoint shows no Cosmos system fields; the package gate catches what must not ship;
+the Terraform keeps the stub's event filters, the code's setting names, Speech's one host and the dead-letter
+account (D43).
 
 The script works on a temporary copy of the repository (tracked and new files, not ignored ones), so the working
 tree is never changed. Exit 1 when a mutation survives (the tests still pass: add a test), when its anchor text is
@@ -192,6 +194,34 @@ MUTATIONS = [
         '    return {k: v for k, v in doc.items() if not k.startswith("_")}',
         "    return dict(doc)",
         "tests/unit/test_function_app.py",
+    ),
+    Mutation(
+        "subscription-filter-drifts",
+        "infra/modules/blobevents/main.tf",
+        'subject_ends_with   = "/${var.manifest_name}"',
+        'subject_ends_with   = "/"',
+        "tests/unit/test_infra_contract.py",
+    ),
+    Mutation(
+        "app-setting-name-typo",
+        "infra/modules/stack/main.tf",
+        "      COSMOS_JOBS_CONTAINER = var.components.cosmos",
+        "      COSMOS_JOB_CONTAINER = var.components.cosmos",
+        "tests/unit/test_infra_contract.py",
+    ),
+    Mutation(
+        "speech-host-from-the-account",
+        "infra/modules/stack/main.tf",
+        "  allowed_fqdns              = [local.recordings_blob_host]",
+        "  allowed_fqdns              = [module.recordings.primary_blob_host]",
+        "tests/unit/test_infra_contract.py",
+    ),
+    Mutation(
+        "deadletters-in-host-storage",
+        "infra/modules/stack/main.tf",
+        "  deadletter_storage_account_id = module.deadletter[0].account_id",
+        "  deadletter_storage_account_id = module.storage.account_id",
+        "tests/unit/test_infra_contract.py",
     ),
     Mutation(
         "package-gate-ignores-forbidden",

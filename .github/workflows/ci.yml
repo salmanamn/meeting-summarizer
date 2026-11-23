@@ -16,6 +16,7 @@ concurrency:
 
 env:
   UV_VERSION: "0.13.8"
+  TF_VERSION: "1.17.1"
 
 jobs:
   lint:
@@ -49,8 +50,8 @@ jobs:
       - name: Compose files are valid, every image pinned by digest (D34)
         run: |
           set -o pipefail
-          docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile ai config -q
-          docker compose --profile ai config --images | tee "$RUNNER_TEMP/images.txt"
+          docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile ai --profile iac config -q
+          docker compose --profile ai --profile iac config --images | tee "$RUNNER_TEMP/images.txt"
           if grep -v '@sha256:' "$RUNNER_TEMP/images.txt"; then echo "::error::pin the images above by digest"; exit 1; fi
 
   unit:
@@ -123,3 +124,48 @@ jobs:
         run: |
           set -o pipefail
           uv run --no-sync python scripts/package_size.py --max-zip-mb 200 --forbid torch,onnxruntime-gpu,piper-tts,pytest,ruff | tee -a "$GITHUB_STEP_SUMMARY"
+
+  iac-static:
+    name: iac-static
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - name: Install uv
+        run: pipx install "uv==${UV_VERSION}"
+      - name: Install Checkov and Conftest (versions pinned in scripts/iac.sh)
+        run: ./scripts/iac.sh install-tools
+      - name: fmt · validate · Checkov per root · policy unit tests (D43)
+        run: ./scripts/iac.sh static
+
+  iac-plan:
+    name: iac-plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false # keep `terraform show -json` output clean
+      - name: Install uv
+        run: pipx install "uv==${UV_VERSION}"
+      - name: Install Checkov and Conftest
+        run: ./scripts/iac.sh install-tools
+      - name: floci-az from the lab's own compose file (D36, D43)
+        run: docker compose --profile iac up -d floci-az
+      - name: Wait for floci-az and trust its certificate
+        run: ./scripts/iac.sh wait-floci && ./scripts/trust-floci-cert.sh
+      - name: Full-stack plan vs floci-az -> Conftest gate -> every IaC mutation must be denied
+        run: ./scripts/iac.sh gate
+      - name: floci-az logs
+        if: failure()
+        run: docker compose --profile iac logs --tail 60 floci-az

@@ -4,7 +4,7 @@ Generated from the headings of [decisions.md](decisions.md) by `scripts/decision
 hand. `tests/unit/test_decisions.py` fails when this file and the headings disagree, or when a number is
 missing or used twice.
 
-37 decisions (D1–D37): 18 updated by a later one, 2 with a status of
+43 decisions (D1–D43): 21 updated by a later one, 2 with a status of
 their own (open questions, workarounds); the rest accepted as written.
 
 | # | Decision | Status |
@@ -25,7 +25,7 @@ their own (open questions, workarounds); the rest accepted as written.
 | [D14](decisions.md#d14--evidence-is-an-enum-of-the-transcripts-times-an-unnamed-owner-stays-empty-updates-d4-d7) | Evidence is an enum of the transcript's times; an unnamed owner stays empty | accepted; updates D4, D7; updated by D23, D25 |
 | [D15](decisions.md#d15--the-upload-contract-the-manifest-goes-last-and-is-the-only-blob-that-triggers-updates-d12) | The upload contract: the manifest goes last and is the only blob that triggers | accepted; updates D12 |
 | [D16](decisions.md#d16--limits-and-checks-before-any-model-runs) | Limits and checks before any model runs | accepted; updated by D22, D24 |
-| [D17](decisions.md#d17--stores-one-job-record-per-meeting-in-cosmos-db-transcripts-as-blobs) | Stores: one job record per meeting in Cosmos DB, transcripts as blobs | accepted |
+| [D17](decisions.md#d17--stores-one-job-record-per-meeting-in-cosmos-db-transcripts-as-blobs) | Stores: one job record per meeting in Cosmos DB, transcripts as blobs | accepted; updated by D38 |
 | [D18](decisions.md#d18--stages-in-cosmos-rather-than-durable-functions-deliveries-are-at-least-once) | Stages in Cosmos rather than Durable Functions; deliveries are at least once | accepted; updated by D21 |
 | [D19](decisions.md#d19--whisper-inside-the-function-on-azure-measured-now-decided-in-m7) | Whisper inside the Function on Azure: measured now, decided in M7 | open: decided in M7 with these numbers and M7's own; updated by D20, D37 |
 | [D20](decisions.md#d20--lab-limits-ollama-capped-at-6-cpus-whisper-at-4-threads-updates-d8-d19) | Lab limits: Ollama capped at 6 CPUs, Whisper at 4 threads | accepted; updates D8, D19; updated by D30 |
@@ -42,7 +42,13 @@ their own (open questions, workarounds); the rest accepted as written.
 | [D31](decisions.md#d31--tuning-round-3-from-granite43b-and-qwen354b-on-the-gpu-updates-d29) | Tuning round 3, from granite4:3b and qwen3.5:4b on the GPU | accepted; updates D29; updated by D32 |
 | [D32](decisions.md#d32--tuning-round-4-from-the-round-3-runs-updates-d29-d31) | Tuning round 4, from the round-3 runs | accepted; updates D29, D31 |
 | [D33](decisions.md#d33--the-local-model-qwen354b-with-thinking-off-m3-closes-with-two-gates-unmet-updates-d22-d27) | The local model: qwen3.5:4b, with thinking off; M3 closes with two gates unmet | accepted; updates D22, D27 |
-| [D34](decisions.md#d34--ci-and-branch-protection-every-lab-image-pinned-by-digest-updates-d8) | CI and branch protection; every lab image pinned by digest | accepted; updates D8 |
+| [D34](decisions.md#d34--ci-and-branch-protection-every-lab-image-pinned-by-digest-updates-d8) | CI and branch protection; every lab image pinned by digest | accepted; updates D8; updated by D43 |
 | [D35](decisions.md#d35--known-bad-changes-must-fail) | Known-bad changes must fail | accepted |
-| [D36](decisions.md#d36--the-pipeline-in-ci-the-labs-own-compose-file-whisper-tiny-a-stand-in-model) | The pipeline in CI: the lab's own compose file, Whisper tiny, a stand-in model | accepted |
+| [D36](decisions.md#d36--the-pipeline-in-ci-the-labs-own-compose-file-whisper-tiny-a-stand-in-model) | The pipeline in CI: the lab's own compose file, Whisper tiny, a stand-in model | accepted; updated by D43 |
 | [D37](decisions.md#d37--the-deployment-package-gate-updates-d19) | The deployment package gate | accepted; updates D19 |
+| [D38](decisions.md#d38--the-azure-stack-in-terraform-one-composition-root-three-storage-accounts-updates-d17) | The Azure stack in Terraform: one composition root, three storage accounts | accepted; updates D17 |
+| [D39](decisions.md#d39--network-posture-public-endpoints-entra-id-only-one-named-trusted-instance) | Network posture: public endpoints, Entra ID only, one named trusted instance | accepted |
+| [D40](decisions.md#d40--the-manifest-subscription-a-system-topic-the-blobs-webhook-and-its-key) | The manifest subscription: a system topic, the blobs webhook, and its key | accepted |
+| [D41](decisions.md#d41--models-and-speech-on-azure-settings-now-code-in-m6) | Models and speech on Azure: settings now, code in M6 | accepted |
+| [D42](decisions.md#d42--identities-and-roles) | Identities and roles | accepted |
+| [D43](decisions.md#d43--iac-checks-floci-az-checkov-conftest-known-bad-plans-updates-d34-d36) | IaC checks: floci-az, Checkov, Conftest, known-bad plans | accepted; updates D34, D36 |
