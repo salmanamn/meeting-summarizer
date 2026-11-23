@@ -29,7 +29,7 @@ resource "azurerm_storage_account" "this" {
   allow_nested_items_to_be_public = false
   public_network_access_enabled   = true # no VNet in the lab (D39)
 
-  shared_access_key_enabled        = false
+  shared_access_key_enabled        = true # gate demo: Shared Key switched on (must be blocked)
   default_to_oauth_authentication  = true
   local_user_enabled               = false
   cross_tenant_replication_enabled = false
