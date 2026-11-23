@@ -407,3 +407,21 @@ def test_other_transient_errors_retry_at_once(lab):
 def test_retry_delay():
     assert [model_retry_delay(a, 30, 120) for a in range(1, 6)] == [30, 60, 120, 120, 120]
     assert model_retry_delay(1, 0, 120) == 0  # MODEL_RETRY_BASE_SECONDS=0 turns the wait off
+
+
+def test_a_host_that_dies_in_every_attempt_runs_out_of_attempts():
+    """The attempt is counted before the work (D18): a worker killed mid-job (no exception reaches the job's own
+    handler) still uses one up, and the delivery after the last one records the failure without working."""
+
+    class Killed(BaseException):  # what the job sees of a host that dies: nothing it can catch as an Exception
+        pass
+
+    lab = Lab(job_max_attempts=2)
+    lab.upload()
+    lab.stt.error = Killed()
+    for _ in range(2):
+        with pytest.raises(Killed):
+            lab.runner.handle(PATH)
+    outcome = lab.runner.handle(PATH)
+    assert (outcome.status, outcome.detail) == ("failed", "retries_exhausted")
+    assert (len(lab.stt.calls), lab.job()["error"]["message"]) == (2, "attempt 3 of 2")
