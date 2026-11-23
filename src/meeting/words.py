@@ -30,8 +30,31 @@ def stem(word: str) -> str:
     return word[:-1] if word.endswith("e") and len(word) > 3 else word
 
 
+_ONES = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen".split()
+_ONES += "seventeen eighteen nineteen".split()
+_ORDINALS = "first second third fourth fifth sixth seventh eighth ninth tenth eleventh twelfth thirteenth".split()
+_ORDINALS += "fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth".split()
+
+
+def number_word(word: str) -> str:
+    """'9th' -> 'ninth', '15' -> 'fifteen', '21st' -> 'twenty first': a model writes digits where Whisper wrote
+    words, and the two must count as the same words (D29). Other words unchanged."""
+    digits, suffix = word.rstrip("stndrh"), word[len(word.rstrip("stndrh")) :]
+    if not digits.isdigit() or suffix not in ("", "st", "nd", "rd", "th") or not 1 <= int(digits) <= 31:
+        return word
+    n = int(digits)
+    names = _ORDINALS if suffix else _ONES
+    if n < 20:
+        return names[n - 1]
+    tens = "twenty" if n < 30 else "thirty"
+    if n % 10 == 0:
+        return "twentieth" if suffix and n == 20 else "thirtieth" if suffix else tens
+    return f"{tens} {names[n % 10 - 1]}"
+
+
 def content_words(text: str) -> set[str]:
-    return {stem(w) for w in normalize(text) if w not in STOPWORDS}
+    words = [part for w in normalize(text) for part in number_word(w).split()]
+    return {stem(w) for w in words if w not in STOPWORDS}
 
 
 def similarity(a: str, b: str) -> float:

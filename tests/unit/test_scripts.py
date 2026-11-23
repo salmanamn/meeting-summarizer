@@ -171,3 +171,39 @@ def test_show_names_the_attachment_an_item_is_about():
         }
     )
     assert show(s)[2] == "action    [00:21] Hana: Update the figures (due: Tuesday) (source: budget.pdf p2.1)"
+
+
+def test_placement_reads_where_ollama_holds_the_model():
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    import eval_meetings
+
+    loaded = {
+        "models": [
+            {"name": "granite4:3b", "size": 4000, "size_vram": 4000},
+            {"name": "x:1b", "size": 10, "size_vram": 4},
+        ]
+    }
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            data = json.dumps(loaded).encode()
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{server.server_address[1]}/v1"
+    try:
+        assert eval_meetings.placement(base, "granite4:3b") == "100% GPU"
+        assert eval_meetings.placement(base, "x:1b") == "40% GPU / 60% CPU"
+        assert eval_meetings.placement(base, "qwen3.5:4b") == "unknown (model not loaded)"
+    finally:
+        server.shutdown()
+    assert eval_meetings.placement("https://example.openai.azure.com/openai/v1", "gpt-5.4-mini") == "not Ollama"

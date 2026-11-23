@@ -19,7 +19,7 @@ flowchart LR
 |---|---|---|
 | Recording arrives | Azurite, `incoming/<meeting-id>/` with `meeting.json` last | Blob storage, Event Grid system topic → Blob trigger (Flex Consumption) |
 | Speech to text | faster-whisper 1.2.1, Whisper small, CPU, pieces cut at pauses | Azure AI Speech batch transcription (REST 2025-10-15), or the same Whisper |
-| Summary | `phi4-mini:3.8b` on Ollama, strict JSON schema | gpt-5.4-mini on Azure OpenAI, strict structured outputs |
+| Summary | `qwen3.5:4b` on Ollama (thinking off, GPU recommended), strict JSON schema | gpt-5.4-mini on Azure OpenAI, strict structured outputs |
 | Result | Cosmos DB emulator, one job record per meeting | Cosmos DB for NoSQL |
 
 ## Run it
@@ -30,7 +30,7 @@ Needs uv, Docker, Azure Functions Core Tools 4 and about 3.5 GB of downloads on 
     uv run python scripts/fetch_models.py stt-small tts-en-libritts
     uv run python scripts/make_meeting.py M01 M02            # synthetic test meetings -> out/meetings/
     docker compose --profile ai up -d && ./scripts/smoke-local.sh
-    docker exec meeting-ollama ollama pull phi4-mini:3.8b
+    docker exec meeting-ollama ollama pull qwen3.5:4b
     uv run python scripts/init_stores.py                     # containers and the jobs collection, emulators only
     cp src/local.settings.json.example src/local.settings.json
 

@@ -74,7 +74,7 @@
     "action_items": [
       {"owner": "Omar", "keywords": [["rota"]], "due": "thursday", "lines": [21, 22]},
       {"owner": "Lina", "keywords": [["article"], ["two", "2", "first"]], "due": "end of the month", "lines": [33, 34]},
-      {"owner": null, "keywords": [["review", "old"]], "lines": [35]},
+      {"owner": null, "keywords": [["review"], ["old", "delet"]], "lines": [35]},
       {"keywords": [["case"]], "lines": [48, 49]},
       {"owner": "Sara", "keywords": [["room", "training"]], "lines": [50, 51]}
     ],

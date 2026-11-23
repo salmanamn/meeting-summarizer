@@ -1,0 +1,11 @@
+# Ollama on the NVIDIA GPU (D30), on a laptop that has one; the lab without this file stays CPU only, as CI will be.
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile ai up -d
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

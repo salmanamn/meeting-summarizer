@@ -21,6 +21,7 @@ import json
 import re
 import sys
 import time
+import urllib.request
 from datetime import UTC, datetime
 from importlib.metadata import version
 from pathlib import Path
@@ -40,6 +41,24 @@ from meeting.transcript import Transcript
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "out" / "eval"
 EVIDENCE = ROOT / "docs" / "evidence"
+
+
+def placement(base_url: str, model: str) -> str:
+    """Where Ollama holds the model, from its /api/ps (D30): "100% GPU", "41% GPU / 59% CPU", "CPU"; or
+    "not Ollama" for any other endpoint. Asked after the run, while the model is still loaded (KEEP_ALIVE)."""
+    root = base_url.removesuffix("/").removesuffix("/v1")
+    if not root.startswith(("http://127.0.0.1", "http://localhost")):
+        return "not Ollama"
+    try:
+        with urllib.request.urlopen(f"{root}/api/ps", timeout=5) as response:  # noqa: S310 (local address only)
+            models = json.load(response).get("models", [])
+    except (OSError, ValueError):
+        return "unknown (no answer from /api/ps)"
+    entry = next((m for m in models if m.get("name") == model or m.get("model") == model), None)
+    if entry is None or not entry.get("size"):
+        return "unknown (model not loaded)"
+    gpu = round(100 * entry.get("size_vram", 0) / entry["size"])
+    return "CPU" if gpu == 0 else "100% GPU" if gpu >= 100 else f"{gpu}% GPU / {100 - gpu}% CPU"
 
 
 def slug(model: str) -> str:
@@ -168,8 +187,17 @@ def run(args) -> int:
             rows.append(f"| {meeting['id']} | {meeting['kind']} | invalid: {exc} | | | | | | | | |")
             results.append({"id": meeting["id"], "kind": meeting["kind"], "valid": False, "error": str(exc)})
             continue
+        except openai.APITimeoutError:  # before APIConnectionError, which it is a kind of
+            print(
+                f"FAIL {meeting['id']}: {settings.chat_model} gave no answer within OPENAI_TIMEOUT_SECONDS "
+                f"({settings.openai_timeout:.0f} s); Ollama may be stuck: docker compose restart ollama"
+            )
+            return 2
         except openai.APIConnectionError:
             print(f"FAIL no answer from {settings.openai_base_url}: is Ollama up? (docker compose --profile ai up -d)")
+            return 2
+        except openai.InternalServerError as exc:
+            print(f"FAIL {meeting['id']}: HTTP {exc.status_code} from {settings.chat_model}: {exc.message}")
             return 2
         except openai.NotFoundError as exc:
             print(f"FAIL {settings.chat_model} is not available at {settings.openai_base_url}: {exc.message}")
@@ -232,12 +260,14 @@ def run(args) -> int:
     checks = gates(totals["script"], *counts["script"]) if args.set == "tuning" and not args.only else []
     passed = all(g.passed for g in checks)
     elapsed = time.perf_counter() - started
+    where = placement(settings.openai_base_url, settings.chat_model)
     name = f"{args.set}-{slug(settings.chat_model)}"
     machine = {
         "set": args.set,
         "model": settings.chat_model,
         "date": f"{datetime.now(UTC):%Y-%m-%d %H:%M} UTC",
         "part_max_chars": settings.part_max_chars,
+        "placement": where,
         "meetings": results,
         "totals": {g: {"kinds": {k: vars(v) for k, v in t.kinds.items()}} for g, t in totals.items()},
         "gates": [{"name": g.name, "value": g.value, "limit": g.limit, "passed": g.passed} for g in checks],
@@ -252,6 +282,7 @@ def run(args) -> int:
         "",
         f"- Date: {machine['date']}",
         f"- Machine: {cpu_model()}, {settings.stt_threads} threads for speech to text",
+        f"- The chat model in Ollama: {where} (D30)",
         f"- Speech to text: {settings.stt_model} ({settings.stt_mode}), faster-whisper {version('faster-whisper')}",
         f"- Summary: {settings.chat_model}, parts of at most {settings.part_max_chars} characters, attachments "
         f"{settings.attachment_context_chars} characters, openai {version('openai')}",
@@ -285,6 +316,7 @@ def run(args) -> int:
         OUT.mkdir(parents=True, exist_ok=True)
         (OUT / f"{name}.json").write_text(json.dumps(machine, indent=2) + "\n", encoding="utf-8")
         evidence.write_text(text, encoding="utf-8")
+        print(f"the chat model in Ollama: {where}")
         print(f"wrote out/eval/{name}.json, {evidence.relative_to(ROOT)}")
     for g in checks:
         print(g.line())
@@ -318,7 +350,7 @@ def compare(paths: list[Path]) -> int:
         rows.append(
             f"| {r['model']} | {len(valid)}/{len(r['meetings'])} | "
             + " | ".join(f"{rate(k, 'recall')} / {rate(k, 'precision')}" for k in KINDS)
-            + f" | {ami('decisions')} / {ami('action_items')} | {seconds / 60:.1f} | "
+            + f" | {ami('decisions')} / {ami('action_items')} | {seconds / 60:.1f} | {r.get('placement', 'CPU')} | "
             + f"{'PASSED' if r['passed'] else 'FAILED: ' + ', '.join(failed)} |"
         )
     lines = [
@@ -328,8 +360,9 @@ def compare(paths: list[Path]) -> int:
         "- Recall / precision on the scripted meetings; summary minutes for every meeting of the set, same machine,"
         " same cached transcripts.",
         "",
-        "| Model | Valid | Decisions | Actions | Questions | AMI recall (decisions / actions) | Summary min | Gates |",
-        "|---|---|---|---|---|---|---|---|",
+        "| Model | Valid | Decisions | Actions | Questions | AMI recall (decisions / actions) | Summary min | Where "
+        "| Gates |",
+        "|---|---|---|---|---|---|---|---|---|",
         *rows,
         "",
     ]
