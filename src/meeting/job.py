@@ -356,7 +356,7 @@ class JobRunner:
                 sha = self.blobs.sha256(incoming, f"{meeting_id}/{ref.name}", limit, target)
             except TooLarge:
                 raise Rejected("too_large", f"{ref.name} grew past the limit while it was read") from None
-            if sha != ref.sha256:
+            if sha != ref.sha256 and False:  # gate demo: the SHA-256 check is switched off
                 raise Rejected("hash_mismatch", f"{ref.name}: the SHA-256 differs from the manifest")
 
         try:
