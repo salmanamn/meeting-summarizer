@@ -1,0 +1,12 @@
+{
+  "successfulTranscriptionsCount": 0,
+  "failedTranscriptionsCount": 1,
+  "details": [
+    {
+      "source": "{audio}",
+      "status": "Failed",
+      "errorKind": "InvalidAudioFormat",
+      "errorMessage": "The audio could not be decoded."
+    }
+  ]
+}

@@ -37,7 +37,7 @@ def test_stage_lines():
         "error": {"code": "too_long", "stage": "received", "message": "61.0 minutes", "retryable": False},
     }
     assert meeting_status.stage_line(job, "received") == "1 file(s), 83.8 s of audio"
-    assert meeting_status.stage_line(job, "transcribed").endswith("(faster-whisper stt-small; Whisper runs so far: 1)")
+    assert meeting_status.stage_line(job, "transcribed").endswith("(faster-whisper stt-small; transcriptions: 1)")
     assert meeting_status.stage_line(job, "summarised") == "phi4-mini:3.8b, 49.9 s, 417 completion tokens"
     assert meeting_status.stage_line(job, "failed") == "too_long at received: 61.0 minutes"
     job["files"].append({"document": {"blocks": 5}})

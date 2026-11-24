@@ -2,7 +2,9 @@
 
     received     the manifest is valid and every file it lists is there, the right size, type and SHA-256; the
                  attachments are read into text blocks, stored next to the transcript (D22)
-    transcribed  the transcript is stored as a blob (a retry or a re-upload of the same recording reuses it)
+    transcribed  the transcript is stored as a blob (a retry or a re-upload of the same recording reuses it); with
+                 Speech batch transcription the job's URL is on the record from its submission on (`speech`), so
+                 a later delivery polls that job instead of submitting another (D45)
     summarised   the grounded summary is on the record
     failed       error.code says why; error.retryable says whether delivering the same manifest again helps
 
@@ -20,7 +22,8 @@ Anything else is transient (model or store unreachable): it propagates, the host
 to JOB_MAX_ATTEMPTS = poisonBlobThreshold, and the last attempt records `retries_exhausted` instead of raising.
 A model error (timeout, no connection, 429, 5xx) first waits 30, 60, 120, 120 s (D21): the host's retry is
 immediate, and a local model keeps generating a request its client gave up on, so an immediate retry only queues
-behind it and times out too (M2 run A).
+behind it and times out too (M2 run A). Speech being unavailable waits the same way (D45); a Speech job that is
+still running when this delivery's waiting time is up does not wait: the next delivery polls it at once.
 """
 
 import logging
@@ -37,14 +40,15 @@ from meeting.documents import AttachmentRejected, Document, LocalReader
 from meeting.manifest import MANIFEST_NAME, ManifestInvalid, meeting_id_from_path, parse
 from meeting.media import HEAD_BYTES, Unreadable, attachment_kind, audio_kind, duration_seconds
 from meeting.settings import Settings
+from meeting.speech import SpeechJobFailed, SpeechJobGone, SpeechUnavailable
 from meeting.stores import Conflict, TooLarge
 from meeting.summarize import NoSpeech, SummaryInvalid, TranscriptTooLong, summarize
 from meeting.transcript import Transcript
 
 log = logging.getLogger("meeting.job")
 RECORD_VERSION = 1
-# Errors from the model's endpoint worth waiting for. APITimeoutError is an APIConnectionError.
-MODEL_ERRORS = (openai.APIConnectionError, openai.RateLimitError, openai.InternalServerError)
+# Errors from the model's endpoint worth waiting for. APITimeoutError is an APIConnectionError. Speech too (D45).
+MODEL_ERRORS = (openai.APIConnectionError, openai.RateLimitError, openai.InternalServerError, SpeechUnavailable)
 
 
 def model_retry_delay(attempt: int, base: int, cap: int) -> int:
@@ -73,9 +77,10 @@ class Outcome:
     detail: str
 
 
-def transcript_blob_name(meeting_id: str, sha256: str, stt_model: str) -> str:
-    """One transcript per recording content and model: a re-upload of the same bytes reuses it."""
-    return f"{meeting_id}/{sha256[:16]}.{stt_model}.json"
+def transcript_blob_name(meeting_id: str, sha256: str, key: str) -> str:
+    """One transcript per recording content and transcriber (the Whisper model, or `azure-speech`, D44): a
+    re-upload of the same bytes reuses it."""
+    return f"{meeting_id}/{sha256[:16]}.{key}.json"
 
 
 def document_blob_name(meeting_id: str, sha256: str, name: str) -> str:
@@ -162,7 +167,8 @@ class JobRunner:
             "attempts": 0,
             "deliveries": (prior["deliveries"] + 1) if prior else 1,
             "ignored_uploads": prior["ignored_uploads"] if prior else 0,
-            "stt_runs": prior["stt_runs"] if prior else 0,  # completed Whisper runs: a reused transcript adds none
+            "stt_runs": prior["stt_runs"] if prior else 0,  # completed transcriptions: a reused transcript adds none
+            "speech": None,  # the batch transcription job (D45); a new upload may hold other bytes: a new job
             "created_at": prior["created_at"] if prior else now,
             "updated_at": now,
             "stages": {},  # stage -> time reached; "received" only once every check passed
@@ -243,7 +249,7 @@ class JobRunner:
     def _transcribed(self, doc: dict, recording: Path | None, tmp: Path) -> tuple[Transcript, dict]:
         meeting_id = doc["id"]
         ref = doc["files"][0]  # the recording is always first (manifest.files)
-        name = transcript_blob_name(meeting_id, ref["sha256"], self.s.stt_model)
+        name = transcript_blob_name(meeting_id, ref["sha256"], self.s.transcript_key)
         stored = self.blobs.read_text(self.s.transcripts_container, name)
         if stored is not None:
             transcript = Transcript.from_json(stored)
@@ -251,18 +257,19 @@ class JobRunner:
                 return transcript, doc
             log.info("%s: transcript reused from %s", meeting_id, name)
         else:
-            if recording is None:  # a retry: the file from the first attempt is gone, and may have been replaced
-                recording = tmp / ref["name"]
-                sha = self.blobs.sha256(
-                    self.s.incoming_container, f"{meeting_id}/{ref['name']}", self.s.max_recording_bytes, recording
-                )
-                if sha != ref["sha256"]:
-                    raise Rejected("hash_mismatch", f"{ref['name']} changed since the job was received")
-            transcript = self._transcriber().transcribe(recording, names=tuple(doc["attendees"]))
+            transcriber = self._transcriber()
+            if getattr(transcriber, "remote", False):
+                transcript, doc = self._remote_transcript(doc, transcriber, recording, tmp)
+            else:
+                if recording is None:  # a retry: the file from the first attempt is gone, and may have been replaced
+                    recording = self._recheck_recording(doc, tmp)
+                transcript = transcriber.transcribe(recording, names=tuple(doc["attendees"]))
             if not transcript.segments:
                 raise Rejected("no_speech", "the recording has no speech")
             self.blobs.write_text(self.s.transcripts_container, name, transcript.to_json())
             doc["stt_runs"] += 1
+            if getattr(transcriber, "remote", False):
+                self._forget_speech_job(doc, transcriber)
             log.info(
                 "%s: transcribed, %d segments, %.1f s of audio in %.1f s",
                 meeting_id,
@@ -282,6 +289,71 @@ class JobRunner:
         doc["stages"]["transcribed"] = now
         doc["updated_at"] = now
         return transcript, self.jobs.replace(doc)
+
+    def _recheck_recording(self, doc: dict, tmp: Path) -> Path:
+        """Download the recording again and require the hash the job was received with."""
+        ref = doc["files"][0]
+        recording = tmp / ref["name"]
+        sha = self.blobs.sha256(
+            self.s.incoming_container, f"{doc['id']}/{ref['name']}", self.s.max_recording_bytes, recording
+        )
+        if sha != ref["sha256"]:
+            raise Rejected("hash_mismatch", f"{ref['name']} changed since the job was received")
+        return recording
+
+    # ---- Speech batch transcription (D44, D45) -----------------------------------------------------------------
+
+    def _remote_transcript(self, doc: dict, transcriber, recording: Path | None, tmp: Path) -> tuple[Transcript, dict]:
+        """Submit the recording once, record the job, wait for it. The service reads the blob itself, so on a retry
+        the blob is hashed again first: Speech must transcribe the bytes this job was received with."""
+        meeting_id, ref = doc["id"], doc["files"][0]
+        speech = doc.get("speech") or {"job": None, "submissions": 0}
+        if not speech["job"]:
+            if recording is None:
+                self._recheck_recording(doc, tmp)
+            url = self.blobs.url(self.s.incoming_container, f"{meeting_id}/{ref['name']}")
+            job_url = transcriber.submit(url, display_name=meeting_id, speakers=len(doc["attendees"]))
+            doc["speech"] = {"job": job_url, "submissions": speech["submissions"] + 1, "submitted_at": self.now()}
+            doc["updated_at"] = self.now()
+            try:
+                # The checkpoint: from here on every delivery polls this job. Updated in place, so the caller's
+                # copy has the new ETag when this delivery records a later failure (retries_exhausted).
+                doc.update(self.jobs.replace(doc))
+            except Conflict:
+                self._delete_quietly(transcriber, job_url)  # another delivery owns the job; don't leave an orphan
+                raise
+            log.info("%s: speech job submitted (submission %d)", meeting_id, doc["speech"]["submissions"])
+        try:
+            transcript = transcriber.wait(doc["speech"]["job"], names=tuple(doc["attendees"]))
+        except SpeechJobFailed as failed:
+            if failed.permanent:
+                raise Rejected("transcription_failed", f"{failed.code}: {failed.message}") from None
+            self._drop_speech_job(doc, f"failed ({failed.code})")
+            raise
+        except SpeechJobGone:
+            self._drop_speech_job(doc, "gone")
+            raise
+        return transcript, doc
+
+    def _drop_speech_job(self, doc: dict, why: str) -> None:
+        """The job can't give a transcript any more: clear it, so the next delivery submits a new one."""
+        log.warning("%s: speech job %s; the next delivery submits the recording again", doc["id"], why)
+        doc["speech"] = {**doc["speech"], "job": None}
+        doc["updated_at"] = self.now()
+        doc.update(self.jobs.replace(doc))  # Conflict propagates: another delivery wrote first
+
+    def _forget_speech_job(self, doc: dict, transcriber) -> None:
+        """The transcript is stored: delete the job on the service (its results with it). Best effort: the
+        service deletes it after its time to live anyway."""
+        job_url = doc["speech"]["job"]
+        self._delete_quietly(transcriber, job_url)
+        doc["speech"] = {**doc["speech"], "job": None, "deleted_at": self.now()}
+
+    def _delete_quietly(self, transcriber, job_url: str) -> None:
+        try:
+            transcriber.delete(job_url)
+        except Exception as exc:  # never fail a finished transcription over its cleanup
+            log.warning("speech job not deleted (%s); its time to live removes it", type(exc).__name__)
 
     def _summarised(self, doc: dict, transcript: Transcript) -> dict:
         try:

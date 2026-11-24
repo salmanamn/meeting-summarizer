@@ -5,15 +5,29 @@ Azure it will be Azure OpenAI's v1 endpoint with an Entra ID token and strict st
 there take `reasoning_effort` and `max_completion_tokens` and reject `temperature` and `max_tokens`; a non-empty
 `reasoning_effort` switches the request to that shape (as in Projects 3 and 4). `none` is the exception: a local
 model that thinks by default (qwen3.5) is asked not to, in the classic shape (Ollama maps `none` to think=false, D27).
+
+Authentication (D46): `OPENAI_AUTH=key` sends OPENAI_API_KEY (Ollama ignores it, the stand-in too); `entra` gives the
+SDK a token provider instead, which fetches and refreshes a Microsoft Entra token for Cognitive Services with the
+app's managed identity (DefaultAzureCredential; AZURE_CLIENT_ID picks the user-assigned one). No key exists on Azure.
 """
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
 from openai import OpenAI
 
 from meeting.settings import Settings
+
+COGNITIVE_SCOPE = "https://cognitiveservices.azure.com/.default"  # Azure OpenAI and Speech take the same audience
+
+
+def entra_token_provider() -> Callable[[], str]:
+    """A callable returning a valid bearer token (cached, refreshed before expiry by azure-identity)."""
+    from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+
+    return get_bearer_token_provider(DefaultAzureCredential(), COGNITIVE_SCOPE)
 
 
 @dataclass(frozen=True)
@@ -30,7 +44,7 @@ class JsonModel:
         self,
         *,
         base_url: str,
-        api_key: str,
+        api_key: str | Callable[[], str],
         model: str,
         max_tokens: int = 1500,
         reasoning_effort: str = "",
@@ -45,7 +59,7 @@ class JsonModel:
     def from_settings(cls, settings: Settings) -> "JsonModel":
         return cls(
             base_url=settings.openai_base_url,
-            api_key=settings.openai_api_key,
+            api_key=entra_token_provider() if settings.openai_auth == "entra" else settings.openai_api_key,
             model=settings.chat_model,
             max_tokens=settings.summary_max_tokens,
             reasoning_effort=settings.chat_reasoning_effort,

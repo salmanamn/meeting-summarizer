@@ -73,7 +73,9 @@ httpcore==1.0.9
 httpcore2==2.16.2 ; sys_platform != 'emscripten'
     # via httpx2
 httpx==0.28.1
-    # via huggingface-hub
+    # via
+    #   huggingface-hub
+    #   meeting-summarizer
 httpx2==2.16.2
     # via openai
 httpx2-jsfetch==1.0 ; sys_platform == 'emscripten'

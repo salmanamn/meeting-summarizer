@@ -8,7 +8,9 @@ say; the transcript cannot close its own block; an answer cut off is refused; lo
 later item answers it; attachments are checked before Docling or pypdfium2 reads them; reasoning models get their
 own request shape; the status endpoint shows no Cosmos system fields; the package gate catches what must not ship;
 the Terraform keeps the stub's event filters, the code's setting names, Speech's one host and the dead-letter
-account (D43).
+account (D43); Speech batch transcription is submitted once per recording, checkpointed, waited for within a
+budget, given only the bytes the job checked, never handed a token outside its endpoint, and Azure picks Speech and
+an Entra token by its settings (D44-D46).
 
 The script works on a temporary copy of the repository (tracked and new files, not ignored ones), so the working
 tree is never changed. Exit 1 when a mutation survives (the tests still pass: add a test), when its anchor text is
@@ -229,6 +231,77 @@ MUTATIONS = [
         'problems = [f"{name} is in the package" for name in sorted({canonical(f) for f in forbidden} & dists)]',
         "problems = []",
         "tests/unit/test_package_size.py",
+    ),
+    # M6 (D44-D46): Speech batch transcription and Entra ID.
+    Mutation(
+        "speech-submitted-every-delivery",
+        "src/meeting/job.py",
+        '        if not speech["job"]:',
+        "        if True:",
+        "tests/unit/test_job_speech.py",
+    ),
+    Mutation(
+        "speech-job-not-checkpointed",
+        "src/meeting/job.py",
+        "                doc.update(self.jobs.replace(doc))\n            except Conflict:",
+        "                pass\n            except Conflict:",
+        "tests/unit/test_job_speech.py",
+    ),
+    Mutation(
+        "speech-reads-an-unchecked-blob",
+        "src/meeting/job.py",
+        "            if recording is None:\n                self._recheck_recording(doc, tmp)",
+        "            if False:\n                self._recheck_recording(doc, tmp)",
+        "tests/unit/test_job_speech.py",
+    ),
+    Mutation(
+        "bad-recording-retried",
+        "src/meeting/job.py",
+        "            if failed.permanent:",
+        "            if False:",
+        "tests/unit/test_job_speech.py",
+    ),
+    Mutation(
+        "speech-reuses-whisper-transcript",
+        "src/meeting/settings.py",
+        'return SPEECH_KEY if self.stt_engine == "speech" else self.stt_model',
+        "return self.stt_model",
+        "tests/unit/test_job_speech.py",
+    ),
+    Mutation(
+        "speech-wait-unbounded",
+        "src/meeting/speech.py",
+        "            if self._clock() + self.poll_seconds > deadline:",
+        "            if False:",
+        "tests/unit/test_speech.py",
+    ),
+    Mutation(
+        "token-sent-to-any-host",
+        "src/meeting/speech.py",
+        '        if f"{parts.scheme}://{parts.netloc}" != self.origin:',
+        "        if False:",
+        "tests/unit/test_speech.py",
+    ),
+    Mutation(
+        "token-sent-to-the-result-storage",
+        "src/meeting/speech.py",
+        "            response = self._client.get(url)",
+        '            response = self._client.get(url, headers={"Authorization": f"Bearer {self.token()}"})',
+        "tests/unit/test_speech.py",
+    ),
+    Mutation(
+        "entra-setting-ignored",
+        "src/meeting/llm.py",
+        'api_key=entra_token_provider() if settings.openai_auth == "entra" else settings.openai_api_key,',
+        "api_key=settings.openai_api_key,",
+        "tests/unit/test_engines.py",
+    ),
+    Mutation(
+        "azure-falls-back-to-whisper",
+        "src/meeting/settings.py",
+        'or ("speech" if speech_endpoint else "whisper")',
+        'or "whisper"',
+        "tests/unit/test_infra_contract.py",
     ),
 ]
 

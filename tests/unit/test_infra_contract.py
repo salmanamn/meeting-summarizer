@@ -29,7 +29,6 @@ HOST_SETTINGS = {  # the Functions host (the trigger's identity-based connection
     "RecordingsStorage__credential",
     "RecordingsStorage__clientId",
 }
-RESERVED_FOR_M6 = {"OPENAI_AUTH", "SPEECH_ENDPOINT", "SPEECH_REGION"}  # the Entra token and the batch transcriber
 
 
 def block(text: str, kind: str, name: str) -> str:
@@ -121,7 +120,7 @@ def test_every_app_setting_is_read_by_someone():
     """A setting name with a typo would be silently ignored on Azure and the code would use its laptop default."""
     read = set(re.findall(r'env\.get\("(\w+)"', (ROOT / "src" / "meeting" / "settings.py").read_text()))
     assert {"RecordingsStorage__blobServiceUri", "COSMOS_ENDPOINT", "JOB_MAX_ATTEMPTS"} <= read  # the regex works
-    assert stack_settings() - read - HOST_SETTINGS - RESERVED_FOR_M6 == set()
+    assert stack_settings() - read - HOST_SETTINGS == set()  # M6 read the last reserved names (D44, D46)
 
 
 def test_azure_never_falls_back_to_a_laptop_connection():
@@ -157,3 +156,39 @@ def test_event_grid_dead_letters_have_their_own_storage_account():
     role = block(text, 'resource "azurerm_role_assignment"', "topic_deadletter")
     assert argument(role, "scope") == "var.deadletter_storage_account_id"
     assert re.search(r"^\s*storage_account_id\s*=\s*var\.deadletter_storage_account_id$", text, re.MULTILINE)
+
+
+def stack_literal(name: str) -> str:
+    """The value of `NAME = "literal"` in the stack's settings maps."""
+    value = re.search(rf'^\s+{name}\s+=\s+"([^"]*)"', STACK_MAIN.read_text(), re.MULTILINE)
+    assert value, f"{name} is not a literal in the stack"
+    return value.group(1)
+
+
+def test_the_stack_s_settings_select_speech_and_entra():
+    """D44, D46: on Azure the code must pick Speech batch transcription (no Whisper model is deployed) and an Entra
+    token for Azure OpenAI (local auth is off). SPEECH_ENDPOINT's value is unknown until apply: any URL stands in."""
+    names = stack_settings()
+    assert {"SPEECH_ENDPOINT", "SPEECH_REGION", "OPENAI_AUTH"} <= names
+    assert "STT_ENGINE" not in names  # the endpoint alone decides; a stray STT_ENGINE=whisper would break Azure
+    azure = load(
+        {"SPEECH_ENDPOINT": "https://spch.cognitiveservices.azure.com/", "OPENAI_AUTH": stack_literal("OPENAI_AUTH")}
+    )
+    assert (azure.stt_engine, azure.openai_auth) == ("speech", "entra")
+
+
+def test_one_delivery_waits_for_speech_within_the_function_timeout():
+    """D45: a delivery polls at most SPEECH_WAIT_SECONDS, then transcribes nothing more and leaves the rest to the
+    next delivery; the summary still needs time after it, inside host.json's functionTimeout."""
+    host = json.loads((ROOT / "src" / "host.json").read_text())
+    hours, minutes, seconds = (int(x) for x in host["functionTimeout"].split(":"))
+    timeout = hours * 3600 + minutes * 60 + seconds
+    assert load({}).speech_wait_seconds + 600 <= timeout  # ten minutes left for the summary and the writes
+
+
+def test_speech_reads_the_blob_host_the_app_writes_to():
+    """The job hands Speech a URL on RecordingsStorage__blobServiceUri; the only host Speech may call is the
+    recordings account's blob host (D41). Both come from the same account."""
+    stack = STACK_MAIN.read_text()
+    assert argument(stack, "RecordingsStorage__blobServiceUri") == "module.recordings.primary_blob_endpoint"
+    assert argument(block(stack, "module", "recordings"), "name") == "local.recordings_account"

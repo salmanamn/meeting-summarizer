@@ -4,7 +4,7 @@
 
 A meeting recording goes into Blob storage; out comes a summary you can act on: the **decisions**, the **action items with their owners**, and the **open questions**, as strict JSON in Cosmos DB, each item pointing at the moment in the recording that supports it. Built from open components on a laptop (faster-whisper, an LLM on Ollama, Azurite and the Cosmos DB emulator), then the same code serverless on Azure (Functions, Azure AI Speech batch transcription, Azure OpenAI).
 
-**Status: M5 — the Azure stack in Terraform.** The Functions app runs on the laptop (M2): an upload to Azurite becomes a summary in the Cosmos DB emulator, through the same Event Grid-based Blob trigger that Flex Consumption uses. M3 added attachments, long meetings and a scored evaluation that chose `qwen3.5:4b` (D33). Every PR runs lint, the unit tests, known-bad changes that must fail them, the pipeline with Whisper tiny against the emulators, a deployment-package gate, and (M5) the Terraform checks: the full Azure stack planned against floci-az and gated by policy. `main` is protected. Nothing deployed to Azure yet (M7).
+**Status: M6 — Speech batch transcription and Entra ID, tested against stand-ins.** The Functions app runs on the laptop (M2): an upload to Azurite becomes a summary in the Cosmos DB emulator, through the same Event Grid-based Blob trigger that Flex Consumption uses. M3 added attachments, long meetings and a scored evaluation that chose `qwen3.5:4b` (D33). Every PR runs lint, the unit tests, known-bad changes that must fail them, the pipeline with Whisper tiny against the emulators, a deployment-package gate, (M5) the Terraform checks: the full Azure stack planned against floci-az and gated by policy, and (M6) the Azure transcriber, Speech batch transcription, against a stand-in of its REST API. `main` is protected. Nothing deployed to Azure yet (M7).
 
 ```mermaid
 flowchart LR
@@ -12,7 +12,7 @@ flowchart LR
     B -->|BlobCreated, subject ends /meeting.json| EG[Event Grid<br/>local: eventgrid_stub.py]
     EG -->|/runtime/webhooks/blobs| F[meeting_job<br/>Blob trigger, source EventGrid]
     F -->|check sizes, types, SHA-256, duration| F
-    F -->|Whisper| T[(transcripts/)]
+    F -->|Whisper, or Speech batch on Azure| T[(transcripts/)]
     F -->|LLM, strict JSON| J[(Cosmos: jobs)]
     S[GET /api/meetings/&lt;id&gt;] --> J
 ```
@@ -20,8 +20,8 @@ flowchart LR
 | Step | Local | Planned on Azure |
 |---|---|---|
 | Recording arrives | Azurite, `incoming/<meeting-id>/` with `meeting.json` last | Blob storage, Event Grid system topic → Blob trigger (Flex Consumption) |
-| Speech to text | faster-whisper 1.2.1, Whisper small, CPU, pieces cut at pauses | Azure AI Speech batch transcription (REST 2025-10-15), or the same Whisper |
-| Summary | `qwen3.5:4b` on Ollama (thinking off, GPU recommended), strict JSON schema | gpt-5.4-mini on Azure OpenAI, strict structured outputs |
+| Speech to text | faster-whisper 1.2.1, Whisper small, CPU, pieces cut at pauses | Azure AI Speech batch transcription (REST 2025-10-15, diarized, Entra token; D44–D46) |
+| Summary | `qwen3.5:4b` on Ollama (thinking off, GPU recommended), strict JSON schema | gpt-5.4-mini on Azure OpenAI, strict structured outputs, Entra token |
 | Result | Cosmos DB emulator, one job record per meeting | Cosmos DB for NoSQL |
 
 ## Run it
@@ -46,7 +46,8 @@ Then three terminals: `source .venv/bin/activate && cd src && func start` (the F
 ## What the job promises
 
 - Nothing starts before `meeting.json`, the last file of an upload, and nothing reaches a model before every file it lists has the stated size, a supported type read from its bytes, the stated SHA-256, and (the recording) at most 60 minutes (D15, D16). A broken upload fails with a code that says why.
-- One job per meeting, whatever Event Grid delivers twice; a retry resumes at the stage reached, and a transcript is never made twice for the same recording (D17, D18).
+- One job per meeting, whatever Event Grid delivers twice; a retry resumes at the stage reached, and a transcript is never made twice for the same recording (D17, D18). On Azure a Speech batch job is submitted once and kept on the record: a delivery that runs out of waiting time leaves it to the next one, which polls the same job (D45).
+- No keys: on Azure the app sends Entra tokens to Azure OpenAI and Speech, and only to their own endpoints (D46).
 
 ## What the summary promises
 
@@ -63,8 +64,8 @@ Then three terminals: `source .venv/bin/activate && cd src && func start` (the F
 |---|---|
 | `lint` | ruff; `uv.lock` current and `src/requirements.txt` exported from it; the decisions index generated from the headings; shellcheck, actionlint; every compose image pinned by digest |
 | `unit` | the unit tests (no network, no emulators) |
-| `tests-must-fail` | 23 known-bad changes to the code, each caught by the unit tests (`scripts/tests_must_fail.py`) |
-| `integration` | the compose lab's Azurite and Cosmos emulator on the runner; the stores, and one meeting spoken by Piper, transcribed by Whisper tiny and summarised by a stand-in model (`scripts/fake_llm.py`) through the real job |
+| `tests-must-fail` | 37 known-bad changes to the code and the Terraform, each caught by the unit tests (`scripts/tests_must_fail.py`) |
+| `integration` | the compose lab's Azurite and Cosmos emulator on the runner; the stores, and one meeting spoken by Piper, transcribed by Whisper tiny and summarised by a stand-in model (`scripts/fake_llm.py`) through the real job; and the job with the Speech client against a stand-in of the batch transcription API (`scripts/fake_speech.py`) |
 | `package` | the Functions deployment package at most 200 MB zipped, with no PyTorch, GPU runtime, Piper or dev tools in it |
 
 The stand-in model checks the request and the plumbing, not the summary: quality is the evaluation's job (`scripts/eval_meetings.py`, D26), run by hand after a model or prompt change. Locally: `uv run python scripts/tests_must_fail.py`, and with the lab up and `scripts/fetch_models.py stt-tiny tts-en-libritts`, `uv run pytest -m integration`.

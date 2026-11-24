@@ -10,6 +10,13 @@ from pathlib import Path
 COSMOS_EMULATOR_ENDPOINT = "http://localhost:8081"
 COSMOS_EMULATOR_KEY = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
 MB = 1024 * 1024
+SPEECH_KEY = "azure-speech"
+ENGINES = ("whisper", "speech")
+OPENAI_AUTHS = ("key", "entra")
+
+
+class SettingsInvalid(ValueError):
+    """A combination of settings the app can't run with; raised by load(), before any job starts."""
 
 
 @dataclass(frozen=True)
@@ -24,8 +31,18 @@ class Settings:
     stt_mode: str  # batched (default: pieces cut at pauses) or sequential (Whisper's sliding window), D13
     stt_batch_size: int
 
+    # The transcriber (D44): whisper on the laptop, Azure AI Speech batch transcription on Azure. The default is
+    # speech when SPEECH_ENDPOINT is set (the stack sets it), whisper otherwise; STT_ENGINE overrides it.
+    stt_engine: str
+    speech_endpoint: str  # https://<custom subdomain>.cognitiveservices.azure.com/ (an Entra token needs it, D41)
+    speech_region: str  # recorded in the transcript's engine label only
+    speech_locale: str  # batch transcription takes a locale, not a language code
+    speech_poll_seconds: int
+    speech_wait_seconds: int  # one delivery waits at most this, then the next delivery resumes the same job (D45)
+
     openai_base_url: str  # any OpenAI-compatible endpoint: Ollama locally, Azure OpenAI later (D5)
     openai_api_key: str
+    openai_auth: str  # key (OPENAI_API_KEY; Ollama, the stand-in) or entra (a token provider, Azure, D46)
     openai_timeout: float
     chat_model: str
     chat_reasoning_effort: (
@@ -61,6 +78,12 @@ class Settings:
     def stt_model_dir(self) -> Path:
         return self.models_dir / self.stt_model
 
+    @property
+    def transcript_key(self) -> str:
+        """What a stored transcript is keyed by besides its recording (D17): the Whisper model, or the service.
+        A Whisper transcript is never reused as a Speech one, or the other way round."""
+        return SPEECH_KEY if self.stt_engine == "speech" else self.stt_model
+
 
 def default_threads() -> int:
     """CPUs this process may use (respects container CPU pinning), capped: Whisper gains little beyond 8."""
@@ -72,6 +95,18 @@ def load(env: dict[str, str] | None = None) -> Settings:
     cosmos_endpoint = env.get("COSMOS_ENDPOINT", COSMOS_EMULATOR_ENDPOINT)
     emulator = cosmos_endpoint.rstrip("/") == COSMOS_EMULATOR_ENDPOINT
     service_uri = env.get("RecordingsStorage__blobServiceUri", "")
+    speech_endpoint = env.get("SPEECH_ENDPOINT", "")
+    engine = env.get("STT_ENGINE", "") or ("speech" if speech_endpoint else "whisper")
+    if engine not in ENGINES:
+        raise SettingsInvalid(f"STT_ENGINE must be one of {', '.join(ENGINES)}, not {engine!r}")
+    if engine == "speech" and not speech_endpoint:
+        raise SettingsInvalid("STT_ENGINE=speech needs SPEECH_ENDPOINT")
+    openai_auth = env.get("OPENAI_AUTH", "key")
+    if openai_auth not in OPENAI_AUTHS:
+        raise SettingsInvalid(f"OPENAI_AUTH must be one of {', '.join(OPENAI_AUTHS)}, not {openai_auth!r}")
+    poll, wait = int(env.get("SPEECH_POLL_SECONDS", "15")), int(env.get("SPEECH_WAIT_SECONDS", "1200"))
+    if not 1 <= poll <= wait:
+        raise SettingsInvalid("SPEECH_POLL_SECONDS must be at least 1 and at most SPEECH_WAIT_SECONDS")
     return Settings(
         models_dir=Path(env.get("MODELS_DIR", "models")),
         stt_model=env.get("STT_MODEL", "stt-small"),
@@ -81,8 +116,15 @@ def load(env: dict[str, str] | None = None) -> Settings:
         stt_beam_size=int(env.get("STT_BEAM_SIZE", "5")),
         stt_mode=env.get("STT_MODE", "batched"),
         stt_batch_size=int(env.get("STT_BATCH_SIZE", "4")),
+        stt_engine=engine,
+        speech_endpoint=speech_endpoint,
+        speech_region=env.get("SPEECH_REGION", ""),
+        speech_locale=env.get("SPEECH_LOCALE", "en-US"),
+        speech_poll_seconds=poll,
+        speech_wait_seconds=wait,
         openai_base_url=env.get("OPENAI_BASE_URL", "http://127.0.0.1:11434/v1"),
         openai_api_key=env.get("OPENAI_API_KEY", "ollama"),  # Ollama ignores the key; the SDK requires one
+        openai_auth=openai_auth,
         openai_timeout=float(env.get("OPENAI_TIMEOUT_SECONDS", "300")),
         chat_model=env.get("CHAT_MODEL", "qwen3.5:4b"),
         chat_reasoning_effort=env.get("CHAT_REASONING_EFFORT", "none"),
