@@ -74,6 +74,10 @@ class BlobStore:
             return None
         return BlobInfo(size=props.size, etag=props.etag)
 
+    def url(self, container: str, name: str) -> str:
+        """The blob's plain URL (no SAS): what Speech batch transcription reads with its own identity (D3)."""
+        return self._blob(container, name).url
+
     def head(self, container: str, name: str, length: int) -> bytes:
         return self._blob(container, name).download_blob(offset=0, length=length).readall()
 

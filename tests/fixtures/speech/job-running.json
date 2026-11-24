@@ -1,0 +1,25 @@
+{
+  "self": "{origin}/speechtotext/transcriptions/ba7ea6f5-3065-40b7-b49a-a90f48584683?api-version=2025-10-15",
+  "displayName": "m01-1",
+  "locale": "en-US",
+  "createdDateTime": "2026-11-24T10:00:00Z",
+  "lastActionDateTime": "2026-11-24T10:00:20Z",
+  "links": {
+    "files": "{origin}/speechtotext/transcriptions/ba7ea6f5-3065-40b7-b49a-a90f48584683/files?api-version=2025-10-15"
+  },
+  "properties": {
+    "wordLevelTimestampsEnabled": false,
+    "displayFormWordLevelTimestampsEnabled": false,
+    "channels": [
+      0
+    ],
+    "punctuationMode": "DictatedAndAutomatic",
+    "profanityFilterMode": "None",
+    "timeToLiveHours": 24,
+    "diarization": {
+      "enabled": true,
+      "maxSpeakers": 2
+    }
+  },
+  "status": "Running"
+}

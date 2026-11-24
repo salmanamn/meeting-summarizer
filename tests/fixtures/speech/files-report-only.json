@@ -1,0 +1,16 @@
+{
+  "values": [
+    {
+      "self": "{origin}/speechtotext/transcriptions/ba7ea6f5-3065-40b7-b49a-a90f48584683/files/00000000-0000-0000-0000-000000000002?api-version=2025-10-15",
+      "name": "report.json",
+      "kind": "TranscriptionReport",
+      "links": {
+        "contentUrl": "{content}/report-failed.json"
+      },
+      "properties": {
+        "size": 300
+      },
+      "createdDateTime": "2026-11-24T10:01:12Z"
+    }
+  ]
+}

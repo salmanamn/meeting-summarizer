@@ -1,0 +1,126 @@
+{
+  "source": "{audio}",
+  "timestamp": "2026-11-24T10:01:10Z",
+  "durationInTicks": 214000000,
+  "durationMilliseconds": 21400,
+  "duration": "PT21.4S",
+  "combinedRecognizedPhrases": [
+    {
+      "channel": 0,
+      "lexical": "good morning, everyone. let's go through the status. omar, please send the updated numbers to finance by wednesday. sure, i will send them by wednesday. we agreed to move the release to the second week of december.",
+      "itn": "good morning, everyone. let's go through the status. omar, please send the updated numbers to finance by wednesday. sure, i will send them by wednesday. we agreed to move the release to the second week of december.",
+      "maskedITN": "good morning, everyone. let's go through the status. omar, please send the updated numbers to finance by wednesday. sure, i will send them by wednesday. we agreed to move the release to the second week of december.",
+      "display": "Good morning, everyone. Let's go through the status. Omar, please send the updated numbers to finance by Wednesday. Sure, I will send them by Wednesday. We agreed to move the release to the second week of December."
+    }
+  ],
+  "recognizedPhrases": [
+    {
+      "recognitionStatus": "Success",
+      "channel": 0,
+      "speaker": 2,
+      "offset": "PT10.2S",
+      "duration": "PT2.4S",
+      "offsetInTicks": 102000000,
+      "durationInTicks": 24000000,
+      "nBest": [
+        {
+          "confidence": 0.93,
+          "lexical": "sure, i will send them by wednesday",
+          "itn": "sure, i will send them by wednesday.",
+          "maskedITN": "sure, i will send them by wednesday.",
+          "display": "Sure, I will send them by Wednesday."
+        }
+      ]
+    },
+    {
+      "recognitionStatus": "Success",
+      "channel": 0,
+      "speaker": 1,
+      "offset": "PT0.48S",
+      "duration": "PT3.2S",
+      "offsetInTicks": 4800000,
+      "durationInTicks": 32000000,
+      "nBest": [
+        {
+          "confidence": 0.93,
+          "lexical": "good morning, everyone. let's go through the status",
+          "itn": "good morning, everyone. let's go through the status.",
+          "maskedITN": "good morning, everyone. let's go through the status.",
+          "display": "Good morning, everyone. Let's go through the status."
+        }
+      ]
+    },
+    {
+      "recognitionStatus": "Success",
+      "channel": 0,
+      "speaker": 2,
+      "offset": "PT9.0S",
+      "duration": "PT0.6S",
+      "offsetInTicks": 90000000,
+      "durationInTicks": 6000000,
+      "nBest": [
+        {
+          "confidence": 0.93,
+          "lexical": "",
+          "itn": "",
+          "maskedITN": "",
+          "display": ""
+        }
+      ]
+    },
+    {
+      "recognitionStatus": "Success",
+      "channel": 0,
+      "speaker": 1,
+      "offset": "PT4.1S",
+      "duration": "PT5.6S",
+      "offsetInTicks": 41000000,
+      "durationInTicks": 56000000,
+      "nBest": [
+        {
+          "confidence": 0.93,
+          "lexical": "omar, please send the updated numbers to finance by wednesday",
+          "itn": "omar, please send the updated numbers to finance by wednesday.",
+          "maskedITN": "omar, please send the updated numbers to finance by wednesday.",
+          "display": "Omar, please send the updated numbers to finance by Wednesday."
+        }
+      ]
+    },
+    {
+      "recognitionStatus": "NoMatch",
+      "channel": 0,
+      "speaker": 2,
+      "offset": "PT12.5S",
+      "duration": "PT0.3S",
+      "offsetInTicks": 125000000,
+      "durationInTicks": 3000000,
+      "nBest": [
+        {
+          "confidence": 0.93,
+          "lexical": "mm",
+          "itn": "mm",
+          "maskedITN": "mm",
+          "display": "mm"
+        }
+      ]
+    },
+    {
+      "recognitionStatus": "Success",
+      "channel": 0,
+      "speaker": 1,
+      "offset": "PT13.0S",
+      "duration": "PT4.8S",
+      "offsetInTicks": 130000000,
+      "durationInTicks": 48000000,
+      "nBest": [
+        {
+          "confidence": 0.93,
+          "lexical": "we agreed to move the release to the second week of december",
+          "itn": "we agreed to move the release to the second week of december.",
+          "maskedITN": "we agreed to move the release to the second week of december.",
+          "display": "We agreed to move the release to the second week of December."
+        }
+      ]
+    }
+  ]
+}

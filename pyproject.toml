@@ -6,6 +6,7 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "pydantic>=2.14,<3",
     "openai>=3.57,<4",
+    "httpx>=0.28,<1", # the Speech batch transcription client (D45); openai depends on it too, now named
 ]
 
 # One group per job (D10). The Functions app ships `stt`, `storage`, `function` and `docs` (M3); `fixtures` (Piper,

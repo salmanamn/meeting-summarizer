@@ -42,6 +42,9 @@ class FakeBlobs:
         data, etag = self.data[(container, name)]
         return BlobInfo(size=len(data), etag=etag)
 
+    def url(self, container, name):
+        return f"https://strecfake.blob.core.windows.net/{container}/{name}"
+
     def head(self, container, name, length):
         return self.data[(container, name)][0][:length]
 
@@ -108,6 +111,46 @@ class FakeTranscriber:
         if self.error:
             raise self.error
         return self.transcript
+
+
+class FakeRemoteTranscriber:
+    """Stands in for meeting.speech.SpeechTranscriber: the job's three calls, in memory. `outcomes` is used up one
+    wait() at a time: "pending", "gone", a SpeechJobFailed, or "done" (the default once the list is empty)."""
+
+    remote = True
+
+    def __init__(self, transcript=None, outcomes=(), submit_error: Exception | None = None) -> None:
+        self.transcript = transcript or FakeTranscriber().transcript
+        self.outcomes = list(outcomes)
+        self.submit_error = submit_error
+        self.submitted: list[tuple[str, str, int]] = []  # (audio url, display name, speakers)
+        self.waited: list[str] = []
+        self.deleted: list[str] = []
+        self.delete_error: Exception | None = None
+
+    def submit(self, audio_url, *, display_name, speakers):
+        if self.submit_error:
+            raise self.submit_error
+        self.submitted.append((audio_url, display_name, speakers))
+        return f"https://spch.example/speechtotext/transcriptions/{len(self.submitted)}"
+
+    def wait(self, job_url, *, names=()):
+        from meeting.speech import SpeechJobGone, TranscriptionPending
+
+        self.waited.append(job_url)
+        outcome = self.outcomes.pop(0) if self.outcomes else "done"
+        if outcome == "pending":
+            raise TranscriptionPending("still Running")
+        if outcome == "gone":
+            raise SpeechJobGone("HTTP 404")
+        if isinstance(outcome, Exception):
+            raise outcome
+        return self.transcript
+
+    def delete(self, job_url):
+        if self.delete_error:
+            raise self.delete_error
+        self.deleted.append(job_url)
 
 
 def wav_bytes(seconds: float = 1.0, rate: int = 16000) -> bytes:

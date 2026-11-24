@@ -81,7 +81,7 @@ def stage_line(job: dict, stage: str) -> str:
         t = job["transcript"]
         return (
             f"{t['segments']} segments, {t['audio_seconds']:.1f} s of audio in {t['seconds']:.1f} s "
-            f"({t['engine']}; Whisper runs so far: {job['stt_runs']})"
+            f"({t['engine']}; transcriptions: {job['stt_runs']})"
         )
     if stage == "summarised":
         m = job["summary_meta"]

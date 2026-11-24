@@ -34,10 +34,16 @@ def _runner() -> JobRunner:
 
 @lru_cache(maxsize=1)
 def _transcriber():
-    """Whisper is loaded once per worker process, on the first job (a few seconds), not on every delivery."""
+    """STT_ENGINE (D44): Azure AI Speech batch transcription on Azure (SPEECH_ENDPOINT set), Whisper on the laptop.
+    Either is made once per worker process, on the first job (Whisper's model takes a few seconds to load)."""
+    settings = load()
+    if settings.stt_engine == "speech":
+        from meeting.speech import SpeechTranscriber
+
+        return SpeechTranscriber.from_settings(settings)
     from meeting.stt import WhisperTranscriber
 
-    return WhisperTranscriber.from_settings(load())
+    return WhisperTranscriber.from_settings(settings)
 
 
 @lru_cache(maxsize=1)

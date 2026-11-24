@@ -4,16 +4,16 @@ Generated from the headings of [decisions.md](decisions.md) by `scripts/decision
 hand. `tests/unit/test_decisions.py` fails when this file and the headings disagree, or when a number is
 missing or used twice.
 
-43 decisions (D1–D43): 21 updated by a later one, 2 with a status of
+47 decisions (D1–D47): 26 updated by a later one, 2 with a status of
 their own (open questions, workarounds); the rest accepted as written.
 
 | # | Decision | Status |
 |---|---|---|
 | [D1](decisions.md#d1--shape-a-recording-in-a-summary-out) | Shape: a recording in, a summary out | accepted |
 | [D2](decisions.md#d2--transcription-on-the-laptop-faster-whisper-whisper-small-english) | Transcription on the laptop: faster-whisper, Whisper small, English | accepted |
-| [D3](decisions.md#d3--transcription-on-azure-speech-batch-transcription-rest-api-2025-10-15) | Transcription on Azure: Speech batch transcription, REST API 2025-10-15 | planned for M6: checked against the docs on 2026-11-21, not run yet |
+| [D3](decisions.md#d3--transcription-on-azure-speech-batch-transcription-rest-api-2025-10-15) | Transcription on Azure: Speech batch transcription, REST API 2025-10-15 | built in M6 against the documented API (D44–D47), fake-tested only; first run on Azure in M7; updated by D44 |
 | [D4](decisions.md#d4--the-summary-contract-strict-schema-limits-afterwards-grounded-in-the-transcript) | The summary contract: strict schema, limits afterwards, grounded in the transcript | accepted; updated by D14, D23, D24, D25 |
-| [D5](decisions.md#d5--the-model-one-openai-compatible-client) | The model: one OpenAI-compatible client | accepted |
+| [D5](decisions.md#d5--the-model-one-openai-compatible-client) | The model: one OpenAI-compatible client | accepted; updated by D46 |
 | [D6](decisions.md#d6--owners-come-from-what-was-said-not-from-who-spoke) | Owners come from what was said, not from who spoke | accepted; updated by D29 |
 | [D7](decisions.md#d7--test-meetings-are-synthetic-scripted-and-carry-their-answers) | Test meetings are synthetic, scripted, and carry their answers | accepted; updated by D14, D26 |
 | [D8](decisions.md#d8--configuration-from-environment-variables-the-local-lab) | Configuration from environment variables; the local lab | accepted; updated by D20, D30, D34 |
@@ -25,11 +25,11 @@ their own (open questions, workarounds); the rest accepted as written.
 | [D14](decisions.md#d14--evidence-is-an-enum-of-the-transcripts-times-an-unnamed-owner-stays-empty-updates-d4-d7) | Evidence is an enum of the transcript's times; an unnamed owner stays empty | accepted; updates D4, D7; updated by D23, D25 |
 | [D15](decisions.md#d15--the-upload-contract-the-manifest-goes-last-and-is-the-only-blob-that-triggers-updates-d12) | The upload contract: the manifest goes last and is the only blob that triggers | accepted; updates D12 |
 | [D16](decisions.md#d16--limits-and-checks-before-any-model-runs) | Limits and checks before any model runs | accepted; updated by D22, D24 |
-| [D17](decisions.md#d17--stores-one-job-record-per-meeting-in-cosmos-db-transcripts-as-blobs) | Stores: one job record per meeting in Cosmos DB, transcripts as blobs | accepted; updated by D38 |
-| [D18](decisions.md#d18--stages-in-cosmos-rather-than-durable-functions-deliveries-are-at-least-once) | Stages in Cosmos rather than Durable Functions; deliveries are at least once | accepted; updated by D21 |
+| [D17](decisions.md#d17--stores-one-job-record-per-meeting-in-cosmos-db-transcripts-as-blobs) | Stores: one job record per meeting in Cosmos DB, transcripts as blobs | accepted; updated by D38, D44 |
+| [D18](decisions.md#d18--stages-in-cosmos-rather-than-durable-functions-deliveries-are-at-least-once) | Stages in Cosmos rather than Durable Functions; deliveries are at least once | accepted; updated by D21, D45 |
 | [D19](decisions.md#d19--whisper-inside-the-function-on-azure-measured-now-decided-in-m7) | Whisper inside the Function on Azure: measured now, decided in M7 | open: decided in M7 with these numbers and M7's own; updated by D20, D37 |
 | [D20](decisions.md#d20--lab-limits-ollama-capped-at-6-cpus-whisper-at-4-threads-updates-d8-d19) | Lab limits: Ollama capped at 6 CPUs, Whisper at 4 threads | accepted; updates D8, D19; updated by D30 |
-| [D21](decisions.md#d21--a-model-error-waits-before-the-hosts-retry-updates-d18) | A model error waits before the host's retry | accepted; updates D18 |
+| [D21](decisions.md#d21--a-model-error-waits-before-the-hosts-retry-updates-d18) | A model error waits before the host's retry | accepted; updates D18; updated by D45 |
 | [D22](decisions.md#d22--attachments-docx-through-docling-pdf-through-its-text-layer-updates-d16) | Attachments: DOCX through Docling, PDF through its text layer | accepted; updates D16; updated by D33 |
 | [D23](decisions.md#d23--attachments-in-the-prompt-background-with-references-never-the-source-of-a-decision-updates-d4-d14) | Attachments in the prompt: background with references, never the source of a decision | accepted; updates D4, D14; updated by D28 |
 | [D24](decisions.md#d24--long-meetings-summarised-in-parts-cut-at-pauses-merged-without-a-second-summary-updates-d4-d16) | Long meetings: summarised in parts cut at pauses, merged without a second summary | accepted; updates D4, D16; updated by D28, D29 |
@@ -43,12 +43,16 @@ their own (open questions, workarounds); the rest accepted as written.
 | [D32](decisions.md#d32--tuning-round-4-from-the-round-3-runs-updates-d29-d31) | Tuning round 4, from the round-3 runs | accepted; updates D29, D31 |
 | [D33](decisions.md#d33--the-local-model-qwen354b-with-thinking-off-m3-closes-with-two-gates-unmet-updates-d22-d27) | The local model: qwen3.5:4b, with thinking off; M3 closes with two gates unmet | accepted; updates D22, D27 |
 | [D34](decisions.md#d34--ci-and-branch-protection-every-lab-image-pinned-by-digest-updates-d8) | CI and branch protection; every lab image pinned by digest | accepted; updates D8; updated by D43 |
-| [D35](decisions.md#d35--known-bad-changes-must-fail) | Known-bad changes must fail | accepted |
-| [D36](decisions.md#d36--the-pipeline-in-ci-the-labs-own-compose-file-whisper-tiny-a-stand-in-model) | The pipeline in CI: the lab's own compose file, Whisper tiny, a stand-in model | accepted; updated by D43 |
+| [D35](decisions.md#d35--known-bad-changes-must-fail) | Known-bad changes must fail | accepted; updated by D47 |
+| [D36](decisions.md#d36--the-pipeline-in-ci-the-labs-own-compose-file-whisper-tiny-a-stand-in-model) | The pipeline in CI: the lab's own compose file, Whisper tiny, a stand-in model | accepted; updated by D43, D47 |
 | [D37](decisions.md#d37--the-deployment-package-gate-updates-d19) | The deployment package gate | accepted; updates D19 |
 | [D38](decisions.md#d38--the-azure-stack-in-terraform-one-composition-root-three-storage-accounts-updates-d17) | The Azure stack in Terraform: one composition root, three storage accounts | accepted; updates D17 |
 | [D39](decisions.md#d39--network-posture-public-endpoints-entra-id-only-one-named-trusted-instance) | Network posture: public endpoints, Entra ID only, one named trusted instance | accepted |
 | [D40](decisions.md#d40--the-manifest-subscription-a-system-topic-the-blobs-webhook-and-its-key) | The manifest subscription: a system topic, the blobs webhook, and its key | accepted |
-| [D41](decisions.md#d41--models-and-speech-on-azure-settings-now-code-in-m6) | Models and speech on Azure: settings now, code in M6 | accepted |
+| [D41](decisions.md#d41--models-and-speech-on-azure-settings-now-code-in-m6) | Models and speech on Azure: settings now, code in M6 | accepted; updated by D46 |
 | [D42](decisions.md#d42--identities-and-roles) | Identities and roles | accepted |
 | [D43](decisions.md#d43--iac-checks-floci-az-checkov-conftest-known-bad-plans-updates-d34-d36) | IaC checks: floci-az, Checkov, Conftest, known-bad plans | accepted; updates D34, D36 |
+| [D44](decisions.md#d44--the-transcriber-on-azure-speech-batch-transcription-chosen-by-speech_endpoint-updates-d3-d17) | The transcriber on Azure: Speech batch transcription, chosen by `SPEECH_ENDPOINT` | accepted; updates D3, D17 |
+| [D45](decisions.md#d45--how-the-function-waits-for-a-batch-job-polled-inside-the-stage-checkpointed-on-the-record-updates-d18-d21) | How the Function waits for a batch job: polled inside the stage, checkpointed on the record | accepted; updates D18, D21 |
+| [D46](decisions.md#d46--microsoft-entra-tokens-for-azure-openai-and-speech-updates-d5-d41) | Microsoft Entra tokens for Azure OpenAI and Speech | accepted; updates D5, D41 |
+| [D47](decisions.md#d47--testing-speech-without-the-service-updates-d35-d36) | Testing Speech without the service | accepted; updates D35, D36 |
