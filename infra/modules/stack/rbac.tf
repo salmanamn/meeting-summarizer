@@ -33,8 +33,9 @@ locals {
     } : {},
   )
 
-  # The human operator (D42): upload meetings into incoming/ and read job records from the laptop (M7). Nothing
-  # else; omitted when operator_object_id is empty.
+  # The human operator (D42, D49): upload meetings into incoming/, read job records and transcripts, and call the
+  # stack's chat deployment from the laptop (M7: the Speech/Whisper comparison). Nothing else; omitted when
+  # operator_object_id is empty.
   operator_enabled = var.components.rbac && length(var.operator_object_id) > 0
 }
 
@@ -75,6 +76,26 @@ resource "azurerm_role_assignment" "operator_upload" {
   principal_id       = var.operator_object_id
   principal_type     = "User"
   description        = "meeting-summarizer operator: upload meetings from the laptop"
+}
+
+# Read only, on transcripts/ only: the Speech transcript the job stored, for the comparison (D49, D50).
+resource "azurerm_role_assignment" "operator_transcripts" {
+  count              = local.operator_enabled ? 1 : 0
+  scope              = module.recordings.container_ids[local.transcripts_container]
+  role_definition_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${local.role_ids.storage_blob_data_reader}"
+  principal_id       = var.operator_object_id
+  principal_type     = "User"
+  description        = "meeting-summarizer operator: read stored transcripts from the laptop"
+}
+
+# The stack's chat deployment from the laptop: both transcripts summarised by the same model (D49, D50).
+resource "azurerm_role_assignment" "operator_openai" {
+  count              = local.operator_enabled && var.components.openai ? 1 : 0
+  scope              = module.openai[0].account_id
+  role_definition_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${local.role_ids.cognitive_openai_user}"
+  principal_id       = var.operator_object_id
+  principal_type     = "User"
+  description        = "meeting-summarizer operator: summarise transcripts from the laptop with the stack's model"
 }
 
 # Built-in Data Reader: the operator reads job records, never writes them.

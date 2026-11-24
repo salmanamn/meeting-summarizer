@@ -23,6 +23,7 @@ WORKSPACE_OTHER = "/subscriptions/x/resourceGroups/rg-x/providers/Microsoft.Oper
 OWNER = "8e3af657-a8ff-443c-a75c-2fe8c4bcb635"
 DEADLETTER_CONTAINER = "eventgrid-deadletter"
 COSMOS_CONTRIBUTOR = "00000000-0000-0000-0000-000000000002"
+BLOB_CONTRIBUTOR = "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
 
 
 @dataclass(frozen=True)
@@ -176,6 +177,18 @@ def operator_writes_jobs(plan: dict) -> None:
     after["role_definition_id"] = f"/sqlRoleDefinitions/{COSMOS_CONTRIBUTOR}"
 
 
+def operator_writes_transcripts(plan: dict) -> None:
+    """D49: the operator reads transcripts/; Blob Data Contributor there would let a laptop replace what the job
+    stored (and a later delivery would reuse it as the meeting's transcript)."""
+    rc = find(
+        plan,
+        lambda r: r["type"] == "azurerm_role_assignment" and r["name"] == "operator_transcripts",
+        "operator's transcripts role",
+    )
+    after = rc["change"]["after"]
+    after["role_definition_id"] = after["role_definition_id"].rsplit("/", 1)[0] + "/" + BLOB_CONTRIBUTOR
+
+
 MUTATIONS = [
     Mutation("storage-shared-key", "azurerm_storage_account", setter("shared_access_key_enabled", True)),
     Mutation("storage-public-blobs", "azurerm_storage_account", setter("allow_nested_items_to_be_public", True)),
@@ -249,6 +262,7 @@ MUTATIONS = [
     Mutation("role-owner", "azurerm_role_assignment", role_to_owner),
     Mutation("role-to-user", "azurerm_role_assignment", setter("principal_type", "User")),
     Mutation("operator-writes-jobs", "<plan>", operator_writes_jobs),
+    Mutation("operator-writes-transcripts", "<plan>", operator_writes_transcripts),
     Mutation("setting-connection-string", "<plan>", add_setting("RecordingsStorage")),
     Mutation("setting-api-key", "<plan>", add_setting("OPENAI_API_KEY")),
     Mutation("setting-trigger-queue-missing", "<plan>", drop_setting("RecordingsStorage__queueServiceUri")),

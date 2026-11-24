@@ -192,3 +192,71 @@ def test_speech_reads_the_blob_host_the_app_writes_to():
     stack = STACK_MAIN.read_text()
     assert argument(stack, "RecordingsStorage__blobServiceUri") == "module.recordings.primary_blob_endpoint"
     assert argument(block(stack, "module", "recordings"), "name") == "local.recordings_account"
+
+
+def settings_block(start: str, end: str) -> set[str]:
+    """Setting names assigned between two markers of the stack's main.tf."""
+    text = STACK_MAIN.read_text()
+    body = text[text.index(start) : text.index(end, text.index(start))]
+    return set(re.findall(r"^\s+(\w+)\s+=", body, re.MULTILINE)) - {"client_settings", "openai_settings"}
+
+
+def laptop_settings() -> set[str]:
+    """The names in client_settings, what scripts/azure_env.sh exports on the laptop (D49)."""
+    text = STACK_MAIN.read_text()
+    start = text.index("  client_settings = merge(")
+    merged = text[start : text.index("\n  )\n", start)]
+    names = settings_block("  client_settings = merge(", "\n  )\n")
+    maps = {  # the stack's setting maps a merge can take in, each up to the marker after it
+        "openai_settings": ("  openai_settings = ", "  speech_settings = "),
+        "speech_settings": ("  speech_settings = ", "  # Endpoints and names only."),
+    }
+    for local_name, (begin, end) in maps.items():
+        if f"local.{local_name}" in merged:
+            names |= settings_block(begin, end) - {"speech_settings"}
+    assert "var.extra_app_settings" not in merged and "local.app_settings," not in merged
+    return names
+
+
+def test_laptop_settings_never_select_speech_and_never_carry_a_key():
+    """D49: the laptop summarises the Whisper transcript with the stack's model, so its settings must reach the
+    recordings, Cosmos and Azure OpenAI by Entra ID and leave the transcriber on Whisper (D44: SPEECH_ENDPOINT would
+    switch it); the operator signs in as themself, so no AZURE_CLIENT_ID either."""
+    names = laptop_settings()
+    assert {"RecordingsStorage__blobServiceUri", "TRANSCRIPTS_CONTAINER", "COSMOS_ENDPOINT", "OPENAI_AUTH"} <= names
+    assert not {n for n in names if n.startswith(("SPEECH_", "STT_"))}
+    assert names.isdisjoint({"AZURE_CLIENT_ID", "RecordingsStorage", "COSMOS_KEY", "OPENAI_API_KEY"})
+    read = set(re.findall(r'env\.get\("(\w+)"', (ROOT / "src" / "meeting" / "settings.py").read_text()))
+    assert names <= read
+    laptop = load(
+        {
+            **{n: "https://x.example/" for n in names},
+            "OPENAI_AUTH": stack_literal("OPENAI_AUTH"),
+            "SUMMARY_MAX_TOKENS": "6000",
+        }
+    )
+    assert (laptop.stt_engine, laptop.openai_auth, laptop.cosmos_key) == ("whisper", "entra", "")
+
+
+def test_the_operator_reads_transcripts_and_uploads_recordings_on_one_container_each():
+    """D49: the operator's three roles, each on the one resource it is for (the plan only knows their names)."""
+    rbac = STACK_RBAC.read_text()
+    expected = {
+        "operator_upload": (
+            "module.recordings.container_ids[local.incoming_container]",
+            "storage_blob_data_contributor",
+        ),
+        "operator_transcripts": (
+            "module.recordings.container_ids[local.transcripts_container]",
+            "storage_blob_data_reader",
+        ),
+        "operator_openai": ("module.openai[0].account_id", "cognitive_openai_user"),
+    }
+    for name, (scope, role) in expected.items():
+        body = block(rbac, 'resource "azurerm_role_assignment"', name)
+        assert argument(body, "scope") == scope, name
+        assert argument(body, "role_definition_id").endswith(f'${{local.role_ids.{role}}}"'), name
+        assert argument(body, "principal_id") == "var.operator_object_id", name
+        assert argument(body, "principal_type") == '"User"', name
+    operator = set(re.findall(r'^resource "azurerm_role_assignment" "(operator\w*)"', rbac, re.MULTILINE))
+    assert operator == set(expected)

@@ -192,14 +192,20 @@ locals {
     var.extra_app_settings,
   )
 
-  # What the laptop scripts need to reach the deployed stack as the operator (M7): upload, then read the record.
-  client_settings = {
-    RecordingsStorage__blobServiceUri = local.app_settings.RecordingsStorage__blobServiceUri
-    INCOMING_CONTAINER                = local.app_settings.INCOMING_CONTAINER
-    COSMOS_ENDPOINT                   = local.app_settings.COSMOS_ENDPOINT
-    COSMOS_DATABASE                   = local.app_settings.COSMOS_DATABASE
-    COSMOS_JOBS_CONTAINER             = local.app_settings.COSMOS_JOBS_CONTAINER
-  }
+  # What the laptop scripts need to reach the deployed stack as the operator (M7, D49): upload, read the record and
+  # the transcript, summarise with the stack's chat deployment. Never the Speech settings: with SPEECH_ENDPOINT set
+  # the laptop's Whisper run would switch to Speech (D44); never AZURE_CLIENT_ID: the laptop signs in as you.
+  client_settings = merge(
+    {
+      RecordingsStorage__blobServiceUri = local.app_settings.RecordingsStorage__blobServiceUri
+      INCOMING_CONTAINER                = local.app_settings.INCOMING_CONTAINER
+      TRANSCRIPTS_CONTAINER             = local.app_settings.TRANSCRIPTS_CONTAINER
+      COSMOS_ENDPOINT                   = local.app_settings.COSMOS_ENDPOINT
+      COSMOS_DATABASE                   = local.app_settings.COSMOS_DATABASE
+      COSMOS_JOBS_CONTAINER             = local.app_settings.COSMOS_JOBS_CONTAINER
+    },
+    local.openai_settings,
+  )
 }
 
 # Workspace-based: telemetry lands in log-slz-platform next to the resource logs.
