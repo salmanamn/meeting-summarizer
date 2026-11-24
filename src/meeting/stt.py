@@ -40,7 +40,8 @@ def sentences(words) -> list[Segment]:
 
 
 class Transcriber(Protocol):
-    """Audio file in, transcript out. faster-whisper here; Azure AI Speech batch transcription later (D3)."""
+    """Audio file in, transcript out: faster-whisper here. Azure AI Speech batch transcription is the other kind
+    (`meeting.speech`, `remote = True`): it reads the blob itself, so the job hands it a URL instead (D3, D44)."""
 
     def transcribe(self, audio: Path, *, names: tuple[str, ...] = ()) -> Transcript: ...
 
