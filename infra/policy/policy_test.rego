@@ -78,6 +78,8 @@ good_resources := [
 	rc("module.stack.module.speech[0]", "azurerm_cognitive_account", "this", speech), diag("module.stack.module.speech[0]"),
 	rc("module.stack", "azurerm_role_assignment", "app", {"role_definition_id": role("b7e6dc6d-f1e8-4753-8033-0f276bb0955b"), "principal_type": "ServicePrincipal"}),
 	rc("module.stack", "azurerm_role_assignment", "operator_upload", {"role_definition_id": role("ba92f5b4-2d11-453d-a403-e96b0029c9fe"), "principal_type": "User"}),
+	rc("module.stack", "azurerm_role_assignment", "operator_transcripts", {"role_definition_id": role("2a2b9908-6ea1-4ae2-8e65-a410df84e7d1"), "principal_type": "User"}),
+	rc("module.stack", "azurerm_role_assignment", "operator_openai", {"role_definition_id": role("5e0bd9bd-7b93-4f28-af87-19fc36ad61bd"), "principal_type": "User"}),
 	rc("module.stack", "azurerm_cosmosdb_sql_role_assignment", "app", {"role_definition_id": "/a/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"}),
 	rc("module.stack", "azurerm_cosmosdb_sql_role_assignment", "operator", {"role_definition_id": "/a/sqlRoleDefinitions/00000000-0000-0000-0000-000000000001"}),
 ]
@@ -202,6 +204,12 @@ test_missing_diagnostics if {
 test_role_not_allowed if denied(with_patch("module.stack.azurerm_role_assignment.app", {"role_definition_id": role("8e3af657-a8ff-443c-a75c-2fe8c4bcb635")}), "allowlist")
 
 test_user_gets_only_upload if denied(with_patch("module.stack.azurerm_role_assignment.app", {"principal_type": "User"}), "a User only gets")
+
+test_operator_writes_transcripts if denied(with_patch("module.stack.azurerm_role_assignment.operator_transcripts", {"role_definition_id": role("ba92f5b4-2d11-453d-a403-e96b0029c9fe")}), "a User only gets")
+
+test_operator_calls_speech if denied(with_patch("module.stack.azurerm_role_assignment.operator_openai", {"role_definition_id": role("f2dc8367-1007-4938-bd23-fe263f013447")}), "a User only gets")
+
+test_operator_role_on_an_identity if denied(with_patch("module.stack.azurerm_role_assignment.operator_openai", {"principal_type": "ServicePrincipal"}), "a User only gets")
 
 test_role_scope if denied(with_patch("module.stack.azurerm_role_assignment.app", {"scope": "/subscriptions/s/resourceGroups/rg-meet-azure"}), "too broad")
 

@@ -10,7 +10,8 @@ own request shape; the status endpoint shows no Cosmos system fields; the packag
 the Terraform keeps the stub's event filters, the code's setting names, Speech's one host and the dead-letter
 account (D43); Speech batch transcription is submitted once per recording, checkpointed, waited for within a
 budget, given only the bytes the job checked, never handed a token outside its endpoint, and Azure picks Speech and
-an Entra token by its settings (D44-D46).
+an Entra token by its settings (D44-D46); the laptop's settings never pick Speech, the operator reads transcripts/ and
+nothing else there, and the comparison counts a name only as spelled (D49, D50).
 
 The script works on a temporary copy of the repository (tracked and new files, not ignored ones), so the working
 tree is never changed. Exit 1 when a mutation survives (the tests still pass: add a test), when its anchor text is
@@ -302,6 +303,28 @@ MUTATIONS = [
         'or ("speech" if speech_endpoint else "whisper")',
         'or "whisper"',
         "tests/unit/test_infra_contract.py",
+    ),
+    # M7 (D49, D50): the laptop's settings and roles for the comparison, and the comparison itself.
+    Mutation(
+        "laptop-settings-select-speech",
+        "infra/modules/stack/main.tf",
+        "    local.openai_settings,\n  )",
+        "    local.openai_settings,\n    local.speech_settings,\n  )",
+        "tests/unit/test_infra_contract.py",
+    ),
+    Mutation(
+        "operator-reads-incoming-not-transcripts",
+        "infra/modules/stack/rbac.tf",
+        "  scope              = module.recordings.container_ids[local.transcripts_container]",
+        "  scope              = module.recordings.container_ids[local.incoming_container]",
+        "tests/unit/test_infra_contract.py",
+    ),
+    Mutation(
+        "comparison-names-heard-loosely",
+        "scripts/compare_engines.py",
+        "return [name for name in attendees if set(normalize(name)) <= words]",
+        "return list(attendees)",
+        "tests/unit/test_compare_engines.py",
     ),
 ]
 

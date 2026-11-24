@@ -56,8 +56,14 @@ allowed_roles := {
 	"f2dc8367-1007-4938-bd23-fe263f013447", # Cognitive Services Speech User
 }
 
-# The only role a human (the operator, D42) may get from this stack: uploading meetings.
-operator_roles := {"ba92f5b4-2d11-453d-a403-e96b0029c9fe"}
+# The only roles a human (the operator, D42, D49) may get from this stack, each from one named assignment: upload
+# meetings, read stored transcripts, call the chat deployment. Scopes are unknown at plan time; the contract test
+# (tests/unit/test_infra_contract.py) pins each assignment to its container or account.
+operator_roles := {
+	"operator_upload": "ba92f5b4-2d11-453d-a403-e96b0029c9fe", # Storage Blob Data Contributor on incoming/
+	"operator_transcripts": "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1", # Storage Blob Data Reader on transcripts/
+	"operator_openai": "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd", # Cognitive Services OpenAI User on the OpenAI account
+}
 
 role_guid(rc) := guid if {
 	parts := split(rc.change.after.role_definition_id, "/")
@@ -73,14 +79,17 @@ deny contains msg if {
 deny contains msg if {
 	some rc in resources("azurerm_role_assignment")
 	not principal_allowed(rc)
-	msg := sprintf("%s: roles go to managed identities (ServicePrincipal); a User only gets Storage Blob Data Contributor", [rc.address])
+	msg := sprintf("%s: roles go to managed identities (ServicePrincipal); a User only gets the operator's upload, transcript-read and chat roles, each from its own assignment (D49)", [rc.address])
 }
 
-principal_allowed(rc) if rc.change.after.principal_type == "ServicePrincipal"
+principal_allowed(rc) if {
+	rc.change.after.principal_type == "ServicePrincipal"
+	not rc.name in object.keys(operator_roles)
+}
 
 principal_allowed(rc) if {
 	rc.change.after.principal_type == "User"
-	role_guid(rc) in operator_roles
+	operator_roles[rc.name] == role_guid(rc)
 }
 
 # A scope known at plan time must be a resource, never a subscription or resource group.

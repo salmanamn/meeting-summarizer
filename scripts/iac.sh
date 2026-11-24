@@ -2,6 +2,7 @@
 # Terraform helpers (D43), Project 3's script. CI (.github/workflows/ci.yml) runs the same commands as the laptop.
 #
 #   install-tools   CI only (Linux x86_64): Checkov via uv, Conftest from its GitHub release (checksum-verified)
+#   install-conftest  CI only: Conftest alone (deploy.yml gates the real Azure plan with it, D48)
 #   static          fmt · validate (both envs) · Checkov per root · Conftest policy unit tests   (CI: iac-static)
 #   wait-floci      wait until floci-az serves its TLS certificate
 #   gate            full-stack plan of envs/local against floci-az -> Conftest -> iac_must_fail  (CI: iac-plan)
@@ -128,11 +129,12 @@ plan_azure() {
 
 case "${1:-}" in
   install-tools) install_tools ;;
+  install-conftest) install_conftest ;;
   static) static ;;
   wait-floci) wait_floci ;;
   gate) gate ;;
   apply-local) apply_local ;;
   destroy-local) destroy_local ;;
   plan-azure) plan_azure ;;
-  *) echo "usage: $0 install-tools | static | wait-floci | gate | apply-local | destroy-local | plan-azure" >&2; exit 2 ;;
+  *) echo "usage: $0 install-tools | install-conftest | static | wait-floci | gate | apply-local | destroy-local | plan-azure" >&2; exit 2 ;;
 esac

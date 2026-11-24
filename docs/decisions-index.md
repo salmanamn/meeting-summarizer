@@ -4,7 +4,7 @@ Generated from the headings of [decisions.md](decisions.md) by `scripts/decision
 hand. `tests/unit/test_decisions.py` fails when this file and the headings disagree, or when a number is
 missing or used twice.
 
-47 decisions (D1–D47): 26 updated by a later one, 2 with a status of
+50 decisions (D1–D50): 27 updated by a later one, 2 with a status of
 their own (open questions, workarounds); the rest accepted as written.
 
 | # | Decision | Status |
@@ -50,9 +50,12 @@ their own (open questions, workarounds); the rest accepted as written.
 | [D39](decisions.md#d39--network-posture-public-endpoints-entra-id-only-one-named-trusted-instance) | Network posture: public endpoints, Entra ID only, one named trusted instance | accepted |
 | [D40](decisions.md#d40--the-manifest-subscription-a-system-topic-the-blobs-webhook-and-its-key) | The manifest subscription: a system topic, the blobs webhook, and its key | accepted |
 | [D41](decisions.md#d41--models-and-speech-on-azure-settings-now-code-in-m6) | Models and speech on Azure: settings now, code in M6 | accepted; updated by D46 |
-| [D42](decisions.md#d42--identities-and-roles) | Identities and roles | accepted |
+| [D42](decisions.md#d42--identities-and-roles) | Identities and roles | accepted; updated by D49 |
 | [D43](decisions.md#d43--iac-checks-floci-az-checkov-conftest-known-bad-plans-updates-d34-d36) | IaC checks: floci-az, Checkov, Conftest, known-bad plans | accepted; updates D34, D36 |
 | [D44](decisions.md#d44--the-transcriber-on-azure-speech-batch-transcription-chosen-by-speech_endpoint-updates-d3-d17) | The transcriber on Azure: Speech batch transcription, chosen by `SPEECH_ENDPOINT` | accepted; updates D3, D17 |
 | [D45](decisions.md#d45--how-the-function-waits-for-a-batch-job-polled-inside-the-stage-checkpointed-on-the-record-updates-d18-d21) | How the Function waits for a batch job: polled inside the stage, checkpointed on the record | accepted; updates D18, D21 |
 | [D46](decisions.md#d46--microsoft-entra-tokens-for-azure-openai-and-speech-updates-d5-d41) | Microsoft Entra tokens for Azure OpenAI and Speech | accepted; updates D5, D41 |
 | [D47](decisions.md#d47--testing-speech-without-the-service-updates-d35-d36) | Testing Speech without the service | accepted; updates D35, D36 |
+| [D48](decisions.md#d48--azure-deploys-through-ci-deployyml-the-sessions-order-project-3s-workarounds) | Azure deploys through CI: deploy.yml, the session's order, Project 3's workarounds | accepted |
+| [D49](decisions.md#d49--the-operators-laptop-on-the-deployed-stack-updates-d42) | The operator's laptop on the deployed stack | accepted; updates D42 |
+| [D50](decisions.md#d50--how-speech-is-compared-with-whisper) | How Speech is compared with Whisper | accepted |
