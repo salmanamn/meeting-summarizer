@@ -39,6 +39,19 @@ def test_retry_limits_agree():
     assert host["extensions"]["blobs"]["maxDegreeOfParallelism"] == 1  # one Whisper per instance
 
 
+def test_sdk_http_logging_stays_out_of_app_insights():
+    """M7: the SDKs' INFO request/response dumps flooded AppTraces (D51). The Python worker's `azure` loggers and the
+    host's `Azure.*` categories (its blob extension's storage client) log warnings and up; the job's own lines and
+    the host's function telemetry stay at Information."""
+    import logging
+
+    assert logging.getLogger("azure").level == logging.WARNING
+    assert not logging.getLogger("azure.core.pipeline.policies.http_logging_policy").isEnabledFor(logging.INFO)
+    assert logging.getLogger("meeting.function").level == logging.NOTSET  # not raised: the job's own lines stay
+    levels = json.loads((SRC / "host.json").read_text())["logging"]["logLevel"]
+    assert levels == {"default": "Information", "Azure": "Warning"}
+
+
 def test_local_settings_name_every_setting_the_code_reads():
     example = json.loads((SRC / "local.settings.json.example").read_text())["Values"]
     assert example["RecordingsStorage"] == example["AzureWebJobsStorage"] == "UseDevelopmentStorage=true"

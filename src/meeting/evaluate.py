@@ -225,9 +225,9 @@ def meeting_checks(s: Score, transcript_wer: float | None = None, max_wer: float
     for kind in KINDS:
         k = s.kinds[kind]
         label = f"{kind}: {k.matched} of {k.expected} expected found ({k.found} in the summary)"
-        out.append(
-            (label + ("" if k.expected else ", must be 0"), k.matched == k.expected and (k.expected or not k.found))
-        )
+        # bool(): `and`/`or` return an operand, and an int here was summed as a pass count ("11 of 8", M7, D51)
+        ok = bool(k.matched == k.expected and (k.expected or not k.found))
+        out.append((label + ("" if k.expected else ", must be 0"), ok))
     for name in ("owner", "due", "evidence", "source"):
         count = getattr(s, name)
         if count.n:

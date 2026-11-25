@@ -104,3 +104,18 @@ def test_azure_side_refuses_laptop_settings(monkeypatch):
         monkeypatch.delenv(name, raising=False)
     with pytest.raises(SystemExit, match=r"meet-azure\.env"):
         compare_engines.azure_side("m7-m01-1")
+
+
+def test_passed_counts_checks_not_their_values():
+    # The M7 summaries of M01: every kind found, one owner wrong -> 7 of 8, never "11 of 8" (D51).
+    checks = [
+        ("WER", True),
+        ("decisions", True),
+        ("actions", True),
+        ("questions", True),
+        ("owner", False),
+        ("due", True),
+        ("evidence", True),
+        ("forbidden", True),
+    ]
+    assert compare_engines.passed(checks) == "7 of 8"

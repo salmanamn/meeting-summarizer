@@ -11,7 +11,9 @@ the Terraform keeps the stub's event filters, the code's setting names, Speech's
 account (D43); Speech batch transcription is submitted once per recording, checkpointed, waited for within a
 budget, given only the bytes the job checked, never handed a token outside its endpoint, and Azure picks Speech and
 an Entra token by its settings (D44-D46); the laptop's settings never pick Speech, the operator reads transcripts/ and
-nothing else there, and the comparison counts a name only as spelled (D49, D50).
+nothing else there, and the comparison counts a name only as spelled (D49, D50); every check is a bool, the
+telemetry survives a failed query, run evidence drops echoed commands, and the SDKs' HTTP dumps stay out of App
+Insights (D51).
 
 The script works on a temporary copy of the repository (tracked and new files, not ignored ones), so the working
 tree is never changed. Exit 1 when a mutation survives (the tests still pass: add a test), when its anchor text is
@@ -325,6 +327,36 @@ MUTATIONS = [
         "return [name for name in attendees if set(normalize(name)) <= words]",
         "return list(attendees)",
         "tests/unit/test_compare_engines.py",
+    ),
+    # M8 (D51): what the M7 evidence showed: a pass count summing ints, one failed query ending the telemetry,
+    # echoed step commands in run evidence, the SDKs' HTTP dumps in AppTraces.
+    Mutation(
+        "checks-are-not-bools",
+        "src/meeting/evaluate.py",
+        "        ok = bool(k.matched == k.expected and (k.expected or not k.found))",
+        "        ok = k.matched == k.expected and (k.expected or not k.found)",
+        "tests/unit/test_evaluate.py",
+    ),
+    Mutation(
+        "telemetry-stops-at-a-failed-query",
+        "scripts/telemetry.sh",
+        '  if out=$(run_query "$2" 2>"$err"); then',
+        '  out=$(run_query "$2" 2>"$err")\n  if true; then',
+        "tests/unit/test_shell_scripts.py",
+    ),
+    Mutation(
+        "evidence-keeps-echoed-commands",
+        "scripts/run_evidence.sh",
+        '  grep -v -F "${ESC}[36;1m" |\n',
+        "",
+        "tests/unit/test_shell_scripts.py",
+    ),
+    Mutation(
+        "sdk-http-logging-at-info",
+        "src/function_app.py",
+        'logging.getLogger("azure").setLevel(logging.WARNING)',
+        "pass",
+        "tests/unit/test_function_app.py",
     ),
 ]
 
