@@ -1,0 +1,10 @@
+apply	skipping
+deploy-code	skipping
+iac-plan	pass
+iac-static	pass
+integration	pass
+lint	pass
+package	pass
+plan	pass
+tests-must-fail	pass
+unit	pass
