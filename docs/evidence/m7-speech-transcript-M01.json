@@ -1,0 +1,221 @@
+{
+  "segments": [
+    {
+      "start": 0.72,
+      "end": 1.72,
+      "text": "Good morning, everyone.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 1.72,
+      "end": 5.24,
+      "text": "This is the planning meeting for the version 2 release of the Pearl Pay mobile app.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 5.32,
+      "end": 7.04,
+      "text": "Omar, Lena, thanks for joining.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 7.72,
+      "end": 8.16,
+      "text": "Morning.",
+      "speaker": "Guest-2"
+    },
+    {
+      "start": 8.2,
+      "end": 11.2,
+      "text": "I have the test results from last week so I can start with those.",
+      "speaker": "Guest-2"
+    },
+    {
+      "start": 11.88,
+      "end": 12.8,
+      "text": "Please go ahead.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 13.48,
+      "end": 15.08,
+      "text": "I found three bugs in the payment screen.",
+      "speaker": "Guest-2"
+    },
+    {
+      "start": 15.08,
+      "end": 19.56,
+      "text": "2 are fixed, the third one only happens on older Android phones and we are still looking at it.",
+      "speaker": "Guest-2"
+    },
+    {
+      "start": 20.28,
+      "end": 22.52,
+      "text": "Do we know how many customers still use those phones?",
+      "speaker": "Guest-3"
+    },
+    {
+      "start": 23.24,
+      "end": 26.12,
+      "text": "Not yet I can pull the numbers from the analytics dashboard.",
+      "speaker": "Guest-2"
+    },
+    {
+      "start": 26.88,
+      "end": 30.08,
+      "text": "Good, Omar, please send those numbers to the team by Wednesday.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 30.76,
+      "end": 32.2,
+      "text": "Sure, I will send them by Wednesday.",
+      "speaker": "Guest-2"
+    },
+    {
+      "start": 32.88,
+      "end": 36.16,
+      "text": "Next, the release date marketing ask for the 15th of March.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 36.88,
+      "end": 40.72,
+      "text": "The 15th works for the design team as long as the new icons are approved this week.",
+      "speaker": "Guest-3"
+    },
+    {
+      "start": 41.4,
+      "end": 42.52,
+      "text": "Then let's decide it.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 42.56,
+      "end": 44.96,
+      "text": "We release version 2 on the 15th of March.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 45.68,
+      "end": 46.2,
+      "text": "Agreed.",
+      "speaker": "Guest-2"
+    },
+    {
+      "start": 46.88,
+      "end": 47.44,
+      "text": "Agreed.",
+      "speaker": "Guest-3"
+    },
+    {
+      "start": 48.16,
+      "end": 50.76,
+      "text": "Lena, can you get the new icons approved by Friday?",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 51.48,
+      "end": 54.68,
+      "text": "Yes, I will send them to the brand team today and get approval by Friday.",
+      "speaker": "Guest-3"
+    },
+    {
+      "start": 55.44,
+      "end": 56.48,
+      "text": "One more decision.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 56.48,
+      "end": 60.28,
+      "text": "We drop the Dark mode feature from this release and move it to version 2.1.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 60.92,
+      "end": 61.76,
+      "text": "That makes sense.",
+      "speaker": "Guest-2"
+    },
+    {
+      "start": 61.76,
+      "end": 63.0,
+      "text": "It needs more testing anyway.",
+      "speaker": "Guest-2"
+    },
+    {
+      "start": 63.68,
+      "end": 64.36,
+      "text": "Fine with me.",
+      "speaker": "Guest-3"
+    },
+    {
+      "start": 65.04,
+      "end": 68.48,
+      "text": "I will update the release notes and share them with the support team next Monday.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 69.16,
+      "end": 71.48,
+      "text": "What about the price change for international transfers?",
+      "speaker": "Guest-2"
+    },
+    {
+      "start": 71.48,
+      "end": 72.68,
+      "text": "Will that be in version 2?",
+      "speaker": "Guest-2"
+    },
+    {
+      "start": 73.4,
+      "end": 74.32,
+      "text": "I don't know yet.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 74.32,
+      "end": 75.88,
+      "text": "Finance hasn't confirmed it.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 75.96,
+      "end": 77.04,
+      "text": "Let's keep that open.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 77.68,
+      "end": 79.8,
+      "text": "And who will present the release at the All Hands meeting?",
+      "speaker": "Guest-3"
+    },
+    {
+      "start": 80.48,
+      "end": 81.32,
+      "text": "Good question.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 81.32,
+      "end": 82.4,
+      "text": "We will come back to that.",
+      "speaker": "Guest-1"
+    },
+    {
+      "start": 82.56,
+      "end": 83.56,
+      "text": "Thanks everyone.",
+      "speaker": "Guest-1"
+    }
+  ],
+  "language": "en-US",
+  "audio_seconds": 84.23,
+  "seconds": 95.0,
+  "engine": "azure-speech batch 2025-10-15 uaenorth",
+  "warnings": [
+    "attendee names not passed: batch transcription takes no phrase list (D44)"
+  ]
+}
