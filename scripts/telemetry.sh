@@ -10,7 +10,8 @@
 #
 # M8 (D51): a query that fails prints "query failed: ..." and the script goes on (in M7 one failed query, under
 # set -e, ended the script and hid three sections); the per-table counts are one query per table, not a union; the
-# Azure SDKs' request/response dumps are left out of the job's log lines.
+# Azure SDKs' request/response dumps are left out of the job's log lines. Column names that are KQL keywords break a
+# query (M8: `order by first` is read as `nulls first`): capitalised names only.
 set -euo pipefail
 START=${1:?usage: telemetry.sh <start e.g. 2026-11-25T18:00:00Z> [meeting id prefix] [end]}
 PREFIX=${2:-m7-}
@@ -65,7 +66,7 @@ query "Job log lines for $PREFIX meetings (AppTraces, without the SDKs' HTTP dum
   | where not(Message startswith 'Request URL:' or Message startswith 'Response status:' or Message startswith 'Request [' or Message startswith 'Response [')
   | project TimeGenerated, SeverityLevel, Message = substring(Message, 0, 200) | order by TimeGenerated asc | take 60"
 query "Exceptions (AppExceptions), first and last of each" \
-  "AppExceptions | where $WHEN | summarize count(), first = min(TimeGenerated), last = max(TimeGenerated) by OperationName, ExceptionType, OuterMessage = substring(OuterMessage, 0, 100) | order by first asc"
+  "AppExceptions | where $WHEN | summarize count(), FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated) by OperationName, ExceptionType, OuterMessage = substring(OuterMessage, 0, 100) | order by FirstSeen asc"
 
 echo "== Resource logs of $RG by table (one query each)"
 for t in AzureDiagnostics CDBDataPlaneRequests StorageBlobLogs StorageQueueLogs FunctionAppLogs AEGDeliveryFailureLogs AEGDataPlaneRequests; do
@@ -85,7 +86,7 @@ query "Recordings account: blob operations by caller (Speech must read incoming/
       RequesterObjectId == '$ME_OID', 'operator', isempty(RequesterObjectId), strcat('no identity (', AuthenticationType, ')'),
       strcat('other ', substring(RequesterObjectId, 0, 8)))
   | extend Container = tostring(split(ObjectKey, '/')[2]), Agent = tostring(split(UserAgentHeader, ' ')[0])
-  | summarize requests = count(), failed = countif(StatusText !in ('Success', 'BlobNotFound')) by Caller, OperationName, Container, AuthenticationType, Agent
+  | summarize requests = count(), failed = countif(StatusText !in ('Success', 'BlobNotFound')), errors = make_set_if(StatusText, StatusText !in ('Success', 'BlobNotFound')) by Caller, OperationName, Container, AuthenticationType, Agent
   | order by Caller asc, OperationName asc"
 query "Event Grid deliveries that failed (AEGDeliveryFailureLogs)" \
   "AEGDeliveryFailureLogs | where $WHEN | where $STACK | summarize count() by Message = substring(Message, 0, 120)"
