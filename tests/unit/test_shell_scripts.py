@@ -128,6 +128,9 @@ def test_telemetry_after_the_destroy_reads_a_fixed_window_and_labels_unknown_cal
     (recordings,) = [q for q in queries if "StorageBlobLogs" in q and "Caller" in q]
     assert "RequesterObjectId == ''" not in recordings  # an unknown identity must not match anonymous requests
     assert "strcat('other ', substring(RequesterObjectId, 0, 8))" in recordings and "UserAgentHeader" in recordings
+    (exceptions,) = [q for q in queries if q.startswith("AppExceptions")]
+    assert "FirstSeen = min(TimeGenerated)" in exceptions and " first " not in exceptions  # `first` is a keyword
+    assert "make_set_if(StatusText" in recordings  # why a request failed, not only that it did
     (traces,) = [q for q in queries if q.startswith("AppTraces")]
     assert "startswith 'Request URL:'" in traces and "startswith 'Request ['" in traces
     assert run(tmp_path, "telemetry.sh", "2026-11-24", FAKE_AZ_QUERIES=str(az)).returncode == 2

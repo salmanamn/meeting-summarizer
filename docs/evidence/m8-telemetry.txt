@@ -24,7 +24,9 @@ TimeGenerated                 SeverityLevel  Message
 2026-11-24T23:37:18.5728032Z  1              meeting job m7-m02-1: summarised (attempt 1)
 
 == Exceptions (AppExceptions), first and last of each
-query failed: ERROR: Bad Request({"error":{"message":"The request had some invalid properties","code":"BadArgumentError","correlationId":"6086adf4-5ae6-4651-9be3-2bf8cdbf4ed3","innererror":{"code":"SyntaxError","message":"A recognition error occurred in the query.","innererror":{"code":"SYN0002","message":"Query 
+OperationName  ExceptionType                                                OuterMessage                                                                                          count_  FirstSeen                     LastSeen
+               Microsoft.AspNetCore.Connections.ConnectionAbortedException  The request stream was aborted.                                                                       2       2026-11-24T23:15:59.0246327Z  2026-11-24T23:16:08.1079652Z
+               Azure.RequestFailedException                                 Server failed to authenticate the request. Make sure the value of Authorization header is formed cor  6       2026-11-24T23:22:41.8625264Z  2026-11-24T23:23:12.2094152Z
 
 == Resource logs of rg-meet-azure by table (one query each)
 AzureDiagnostics         40
@@ -40,34 +42,34 @@ ResourceProvider             Resource               Category                 row
 MICROSOFT.COGNITIVESERVICES  OAI-MEET-AZURE-Q9406   Audit                    4
 MICROSOFT.COGNITIVESERVICES  OAI-MEET-AZURE-Q9406   RequestResponse          6
 MICROSOFT.COGNITIVESERVICES  OAI-MEET-AZURE-Q9406   AzureOpenAIRequestUsage  6
-MICROSOFT.COGNITIVESERVICES  SPCH-MEET-AZURE-Q9406  RequestResponse          20
 MICROSOFT.COGNITIVESERVICES  SPCH-MEET-AZURE-Q9406  Audit                    4
+MICROSOFT.COGNITIVESERVICES  SPCH-MEET-AZURE-Q9406  RequestResponse          20
 
 == Recordings account: blob operations by caller (Speech must read incoming/ with its own identity, D3)
-Caller                       OperationName                Container    AuthenticationType  Agent                              requests  failed
-no identity (Anonymous)      GetBlobProperties            incoming     Anonymous           azsdk-net-Storage.Blobs/12.14.1    2         2
-no identity (Anonymous)      GetBlobProperties            incoming     Anonymous           azsdk-net-Storage.Blobs/12.26.0    2         2
-no identity (Anonymous)      GetBlobProperties            incoming     Anonymous                                              2         2
-no identity (SAS)            GetBlobServiceProperties                  SAS                                                    1         0
-no identity (SAS)            SetBlobServiceProperties                  SAS                                                    1         0
-no identity (TrustedAccess)  GetBlobServiceProperties                  TrustedAccess       SRP/1.0                            2         0
-no identity (TrustedAccess)  GetContainerProperties       transcripts  TrustedAccess       SRP/1.0                            2         0
-no identity (TrustedAccess)  GetContainerProperties       incoming     TrustedAccess       SRP/1.0                            2         0
-no identity (TrustedAccess)  GetContainerServiceMetadata  transcripts  TrustedAccess       SRP/1.0                            2         0
-no identity (TrustedAccess)  GetContainerServiceMetadata  incoming     TrustedAccess       SRP/1.0                            2         0
-operator                     GetBlob                      transcripts  OAuth               azsdk-python-storage-blob/12.31.1  2         0
-operator                     GetBlobProperties            incoming     OAuth               azsdk-python-storage-blob/12.31.1  2         0
-operator                     PutBlob                      incoming     OAuth               azsdk-python-storage-blob/12.31.1  10        6
-other bd42ff48               GetBlob                      incoming     OAuth               azsdk-net-Storage.Blobs/12.26.0    2         0
-other bd42ff48               GetBlobProperties            incoming     OAuth               azsdk-net-Storage.Blobs/12.26.0    2         0
-other bd42ff48               GetBlobProperties            incoming     OAuth               azsdk-net-Storage.Blobs/12.14.1    2         0
-other e5c611fc               GetBlob                      incoming     OAuth               azsdk-python-storage-blob/12.31.1  6         0
-other e5c611fc               GetBlob                      transcripts  OAuth               azsdk-python-storage-blob/12.31.1  2         0
-other e5c611fc               GetBlob                      incoming     OAuth               azsdk-net-Storage.Blobs/12.27.0    2         0
-other e5c611fc               GetBlobProperties            incoming     OAuth               azsdk-python-storage-blob/12.31.1  2         0
-other e5c611fc               GetBlobProperties            incoming     OAuth               azsdk-net-Storage.Blobs/12.27.0    8         0
-other e5c611fc               PutBlob                      transcripts  OAuth               azsdk-python-storage-blob/12.31.1  2         0
+Caller                       OperationName                Container    AuthenticationType  Agent                              requests  failed  errors
+no identity (Anonymous)      GetBlobProperties            incoming     Anonymous           azsdk-net-Storage.Blobs/12.14.1    2         2       ["NoAuthenticationInformation"]
+no identity (Anonymous)      GetBlobProperties            incoming     Anonymous           azsdk-net-Storage.Blobs/12.26.0    2         2       ["NoAuthenticationInformation"]
+no identity (Anonymous)      GetBlobProperties            incoming     Anonymous                                              2         2       ["UnknownError"]
+no identity (SAS)            GetBlobServiceProperties                  SAS                                                    1         0       []
+no identity (SAS)            SetBlobServiceProperties                  SAS                                                    1         0       []
+no identity (TrustedAccess)  GetBlobServiceProperties                  TrustedAccess       SRP/1.0                            2         0       []
+no identity (TrustedAccess)  GetContainerProperties       transcripts  TrustedAccess       SRP/1.0                            2         0       []
+no identity (TrustedAccess)  GetContainerProperties       incoming     TrustedAccess       SRP/1.0                            2         0       []
+no identity (TrustedAccess)  GetContainerServiceMetadata  transcripts  TrustedAccess       SRP/1.0                            2         0       []
+no identity (TrustedAccess)  GetContainerServiceMetadata  incoming     TrustedAccess       SRP/1.0                            2         0       []
+operator                     GetBlob                      transcripts  OAuth               azsdk-python-storage-blob/12.31.1  2         0       []
+operator                     GetBlobProperties            incoming     OAuth               azsdk-python-storage-blob/12.31.1  2         0       []
+operator                     PutBlob                      incoming     OAuth               azsdk-python-storage-blob/12.31.1  10        6       ["InternalError"]
+other bd42ff48               GetBlob                      incoming     OAuth               azsdk-net-Storage.Blobs/12.26.0    2         0       []
+other bd42ff48               GetBlobProperties            incoming     OAuth               azsdk-net-Storage.Blobs/12.26.0    2         0       []
+other bd42ff48               GetBlobProperties            incoming     OAuth               azsdk-net-Storage.Blobs/12.14.1    2         0       []
+other e5c611fc               GetBlob                      incoming     OAuth               azsdk-python-storage-blob/12.31.1  6         0       []
+other e5c611fc               GetBlob                      transcripts  OAuth               azsdk-python-storage-blob/12.31.1  2         0       []
+other e5c611fc               GetBlob                      incoming     OAuth               azsdk-net-Storage.Blobs/12.27.0    2         0       []
+other e5c611fc               GetBlobProperties            incoming     OAuth               azsdk-python-storage-blob/12.31.1  2         0       []
+other e5c611fc               GetBlobProperties            incoming     OAuth               azsdk-net-Storage.Blobs/12.27.0    8         0       []
+other e5c611fc               PutBlob                      transcripts  OAuth               azsdk-python-storage-blob/12.31.1  2         0       []
 
 == Event Grid deliveries that failed (AEGDeliveryFailureLogs)
-query failed: ERROR: Bad Request({"error":{"message":"The request had some invalid properties","code":"BadArgumentError","correlationId":"82787cc2-a310-4ae8-888c-be2bc5514070","innererror":{"code":"SemanticError","message":"A semantic error occurred.","innererror":{"code":"SEM0100","message":"'where' operator: Fa
+query failed: ERROR: Bad Request({"error":{"message":"The request had some invalid properties","code":"BadArgumentError","correlationId":"0569c48f-69f0-4d35-9d2b-4008cc4f05eb","innererror":{"code":"SemanticError","message":"A semantic error occurred.","innererror":{"code":"SEM0100","message":"'where' operator: Fa
 
