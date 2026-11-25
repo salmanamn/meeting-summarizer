@@ -1,0 +1,4 @@
+actual cost 2026-11-24 .. 2026-11-25 (UTC), resource group rg-meet-azure
+    0.00 USD  rg-meet-azure    Azure Cosmos DB
+    0.00 USD  rg-meet-azure    Storage
+total: 0 USD
