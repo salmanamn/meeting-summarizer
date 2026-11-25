@@ -1,0 +1,73 @@
+window: 2026-11-24T22:52:26Z .. 2026-11-25T03:00:00Z; resource group rg-meet-azure; identities looked up: app no, speech no
+
+== Function executions (AppRequests)
+Name            runs  failed  p50_ms  max_ms
+health          1     0       12      12
+meeting_job     2     0       79280   112859
+meeting_status  10    0       65      2846
+
+== Job log lines for m7- meetings (AppTraces, without the SDKs' HTTP dumps)
+TimeGenerated                 SeverityLevel  Message
+2026-11-24T23:29:18.3832615Z  1              Executing 'Functions.meeting_job' (Reason='New blob detected(EventGrid): incoming/m7-m01-1/meeting.json', Id=8d8f3997-440c-4f62-8baa-8ff157b41bad)
+2026-11-24T23:29:20.0484892Z  1              m7-m01-1: received (1 file(s), 84.2 s of audio)
+2026-11-24T23:29:21.4920806Z  1              speech job submitted for m7-m01-1 (status NotStarted)
+2026-11-24T23:29:21.500468Z   1              m7-m01-1: speech job submitted (submission 1)
+2026-11-24T23:31:08.0860616Z  1              m7-m01-1: transcribed, 35 segments, 84.2 s of audio in 95.0 s
+2026-11-24T23:31:11.1420623Z  1              m7-m01-1: summarised in 2.9 s (358 completion tokens)
+2026-11-24T23:31:11.1422623Z  1              meeting job m7-m01-1: summarised (attempt 1)
+2026-11-24T23:35:59.3935132Z  1              Executing 'Functions.meeting_job' (Reason='New blob detected(EventGrid): incoming/m7-m02-1/meeting.json', Id=edff7c4f-3d3a-4231-b1dd-041c05f28432)
+2026-11-24T23:36:00.8105105Z  1              m7-m02-1: received (1 file(s), 20.8 s of audio)
+2026-11-24T23:36:01.3517376Z  1              speech job submitted for m7-m02-1 (status NotStarted)
+2026-11-24T23:36:01.3617859Z  1              m7-m02-1: speech job submitted (submission 1)
+2026-11-24T23:37:16.7911889Z  1              m7-m02-1: transcribed, 11 segments, 20.8 s of audio in 61.0 s
+2026-11-24T23:37:18.5726003Z  1              m7-m02-1: summarised in 1.6 s (204 completion tokens)
+2026-11-24T23:37:18.5728032Z  1              meeting job m7-m02-1: summarised (attempt 1)
+
+== Exceptions (AppExceptions), first and last of each
+query failed: ERROR: Bad Request({"error":{"message":"The request had some invalid properties","code":"BadArgumentError","correlationId":"6086adf4-5ae6-4651-9be3-2bf8cdbf4ed3","innererror":{"code":"SyntaxError","message":"A recognition error occurred in the query.","innererror":{"code":"SYN0002","message":"Query 
+
+== Resource logs of rg-meet-azure by table (one query each)
+AzureDiagnostics         40
+CDBDataPlaneRequests     30
+StorageBlobLogs          514
+StorageQueueLogs         0
+FunctionAppLogs          9109
+AEGDeliveryFailureLogs   query failed (table not in the workspace, or no _ResourceId)
+AEGDataPlaneRequests     query failed (table not in the workspace, or no _ResourceId)
+
+== AzureDiagnostics by provider and category (Speech and Azure OpenAI are COGNITIVESERVICES)
+ResourceProvider             Resource               Category                 rows
+MICROSOFT.COGNITIVESERVICES  OAI-MEET-AZURE-Q9406   Audit                    4
+MICROSOFT.COGNITIVESERVICES  OAI-MEET-AZURE-Q9406   RequestResponse          6
+MICROSOFT.COGNITIVESERVICES  OAI-MEET-AZURE-Q9406   AzureOpenAIRequestUsage  6
+MICROSOFT.COGNITIVESERVICES  SPCH-MEET-AZURE-Q9406  RequestResponse          20
+MICROSOFT.COGNITIVESERVICES  SPCH-MEET-AZURE-Q9406  Audit                    4
+
+== Recordings account: blob operations by caller (Speech must read incoming/ with its own identity, D3)
+Caller                       OperationName                Container    AuthenticationType  Agent                              requests  failed
+no identity (Anonymous)      GetBlobProperties            incoming     Anonymous           azsdk-net-Storage.Blobs/12.14.1    2         2
+no identity (Anonymous)      GetBlobProperties            incoming     Anonymous           azsdk-net-Storage.Blobs/12.26.0    2         2
+no identity (Anonymous)      GetBlobProperties            incoming     Anonymous                                              2         2
+no identity (SAS)            GetBlobServiceProperties                  SAS                                                    1         0
+no identity (SAS)            SetBlobServiceProperties                  SAS                                                    1         0
+no identity (TrustedAccess)  GetBlobServiceProperties                  TrustedAccess       SRP/1.0                            2         0
+no identity (TrustedAccess)  GetContainerProperties       transcripts  TrustedAccess       SRP/1.0                            2         0
+no identity (TrustedAccess)  GetContainerProperties       incoming     TrustedAccess       SRP/1.0                            2         0
+no identity (TrustedAccess)  GetContainerServiceMetadata  transcripts  TrustedAccess       SRP/1.0                            2         0
+no identity (TrustedAccess)  GetContainerServiceMetadata  incoming     TrustedAccess       SRP/1.0                            2         0
+operator                     GetBlob                      transcripts  OAuth               azsdk-python-storage-blob/12.31.1  2         0
+operator                     GetBlobProperties            incoming     OAuth               azsdk-python-storage-blob/12.31.1  2         0
+operator                     PutBlob                      incoming     OAuth               azsdk-python-storage-blob/12.31.1  10        6
+other bd42ff48               GetBlob                      incoming     OAuth               azsdk-net-Storage.Blobs/12.26.0    2         0
+other bd42ff48               GetBlobProperties            incoming     OAuth               azsdk-net-Storage.Blobs/12.26.0    2         0
+other bd42ff48               GetBlobProperties            incoming     OAuth               azsdk-net-Storage.Blobs/12.14.1    2         0
+other e5c611fc               GetBlob                      incoming     OAuth               azsdk-python-storage-blob/12.31.1  6         0
+other e5c611fc               GetBlob                      transcripts  OAuth               azsdk-python-storage-blob/12.31.1  2         0
+other e5c611fc               GetBlob                      incoming     OAuth               azsdk-net-Storage.Blobs/12.27.0    2         0
+other e5c611fc               GetBlobProperties            incoming     OAuth               azsdk-python-storage-blob/12.31.1  2         0
+other e5c611fc               GetBlobProperties            incoming     OAuth               azsdk-net-Storage.Blobs/12.27.0    8         0
+other e5c611fc               PutBlob                      transcripts  OAuth               azsdk-python-storage-blob/12.31.1  2         0
+
+== Event Grid deliveries that failed (AEGDeliveryFailureLogs)
+query failed: ERROR: Bad Request({"error":{"message":"The request had some invalid properties","code":"BadArgumentError","correlationId":"82787cc2-a310-4ae8-888c-be2bc5514070","innererror":{"code":"SemanticError","message":"A semantic error occurred.","innererror":{"code":"SEM0100","message":"'where' operator: Fa
+

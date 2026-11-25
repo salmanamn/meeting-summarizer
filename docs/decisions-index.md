@@ -4,7 +4,7 @@ Generated from the headings of [decisions.md](decisions.md) by `scripts/decision
 hand. `tests/unit/test_decisions.py` fails when this file and the headings disagree, or when a number is
 missing or used twice.
 
-50 decisions (D1–D50): 27 updated by a later one, 2 with a status of
+51 decisions (D1–D51): 29 updated by a later one, 2 with a status of
 their own (open questions, workarounds); the rest accepted as written.
 
 | # | Decision | Status |
@@ -56,6 +56,7 @@ their own (open questions, workarounds); the rest accepted as written.
 | [D45](decisions.md#d45--how-the-function-waits-for-a-batch-job-polled-inside-the-stage-checkpointed-on-the-record-updates-d18-d21) | How the Function waits for a batch job: polled inside the stage, checkpointed on the record | accepted; updates D18, D21 |
 | [D46](decisions.md#d46--microsoft-entra-tokens-for-azure-openai-and-speech-updates-d5-d41) | Microsoft Entra tokens for Azure OpenAI and Speech | accepted; updates D5, D41 |
 | [D47](decisions.md#d47--testing-speech-without-the-service-updates-d35-d36) | Testing Speech without the service | accepted; updates D35, D36 |
-| [D48](decisions.md#d48--azure-deploys-through-ci-deployyml-the-sessions-order-project-3s-workarounds) | Azure deploys through CI: deploy.yml, the session's order, Project 3's workarounds | accepted |
+| [D48](decisions.md#d48--azure-deploys-through-ci-deployyml-the-sessions-order-project-3s-workarounds) | Azure deploys through CI: deploy.yml, the session's order, Project 3's workarounds | accepted; updated by D51 |
 | [D49](decisions.md#d49--the-operators-laptop-on-the-deployed-stack-updates-d42) | The operator's laptop on the deployed stack | accepted; updates D42 |
-| [D50](decisions.md#d50--how-speech-is-compared-with-whisper) | How Speech is compared with Whisper | accepted |
+| [D50](decisions.md#d50--how-speech-is-compared-with-whisper) | How Speech is compared with Whisper | accepted; updated by D51 |
+| [D51](decisions.md#d51--what-the-m7-evidence-showed-and-what-m8-fixed-updates-d48-d50) | What the M7 evidence showed, and what M8 fixed | accepted; updates D48, D50 |

@@ -18,6 +18,9 @@ from meeting.stores import BlobStore, JobStore
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 log = logging.getLogger("meeting.function")
+# The Azure SDKs log every HTTP request and response at INFO (azure.core's HttpLoggingPolicy): in M7 they were most
+# of AppTraces and pushed the job's own lines out of a 60-row query (D51). Warnings and errors still come through.
+logging.getLogger("azure").setLevel(logging.WARNING)
 
 
 @lru_cache(maxsize=1)

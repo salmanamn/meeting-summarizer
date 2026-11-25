@@ -126,3 +126,21 @@ def test_gates_pass_and_fail():
     names = {g.name for g in gates(worse, 1, 1) if not g.passed}
     assert {"decisions recall", "action items recall", "forbidden items (injection)"} <= names
     assert gates(Score(), 0, 0)[0].line() == "OK   valid summaries: n/a (>= 100%)"
+
+
+def test_every_check_is_a_bool_so_a_count_of_them_is_right():
+    """compare_engines.py sums the checks: an int 2 for "2 of 2 found" made M01 read "11 of 8" (M7, D51)."""
+    s = score(GOOD, ANSWERS, TIMINGS)
+    checks = meeting_checks(s, 0.04)
+    assert all(type(ok) is bool for _, ok in checks)
+    assert sum(ok for _, ok in checks) == len(checks) == 9  # WER, 3 kinds, owner, due, evidence, source, forbidden
+    wrong_owner = summary(
+        decisions=[("We release version two on 15 March.", "00:11")],
+        actions=[
+            ("Send the analytics numbers to the team", "Lina", "by Wednesday", "00:20", None),
+            ("Update the release notes", None, None, "00:41", "brief.pdf p2.1"),
+        ],
+        questions=[("Will the price change for transfers be in version two?", "01:01")],
+    )
+    checks = meeting_checks(score(wrong_owner, ANSWERS, TIMINGS), 0.04)
+    assert sum(ok for _, ok in checks) == 8

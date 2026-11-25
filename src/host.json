@@ -3,7 +3,8 @@
   "functionTimeout": "00:30:00",
   "logging": {
     "logLevel": {
-      "default": "Information"
+      "default": "Information",
+      "Azure": "Warning"
     },
     "applicationInsights": {
       "samplingSettings": {

@@ -3,6 +3,7 @@
 - Compared 2026-11-24 23:39 UTC by scripts/compare_engines.py (D50). Synthetic meeting from a script (D7): one meeting is a smoke test of the comparison, not a quality ranking.
 - Attendees on the manifest: Sara, Omar, Lina. Whisper got them as hotwords; Speech batch transcription takes no phrase list (D44).
 - `laptop/*` summaries use the stack's chat deployment from the laptop (D49), so `laptop/speech` against `laptop/whisper` differs only in the transcript; `azure` against `laptop/speech` only in the model's own variation.
+- Corrected in M8 (D51): the "Checks passed" column first read "11 of 8" (the count summed ints, not checks); recounted from the OK/FAIL lines under each summary, which were right.
 
 ## Transcripts
 
@@ -15,9 +16,9 @@
 
 | Summary | Transcript | Model | Decisions | Actions | Questions | Owners | Checks passed | Grounding fixes | Took s | Completion tokens |
 |---|---|---|---|---|---|---|---|---|---|---|
-| azure | speech | gpt-5.4-mini | 2 | 3 | 2 | Omar, (none), (none) | 11 of 8 | 3 | 2.9 | 358 |
-| laptop/speech | speech | gpt-5.4-mini | 3 | 3 | 2 | Omar, (none), (none) | 11 of 8 | 4 | 7.1 | 516 |
-| laptop/whisper | whisper | gpt-5.4-mini | 2 | 3 | 2 | Omar, Lina, (none) | 11 of 8 | 1 | 2.7 | 438 |
+| azure | speech | gpt-5.4-mini | 2 | 3 | 2 | Omar, (none), (none) | 7 of 8 | 3 | 2.9 | 358 |
+| laptop/speech | speech | gpt-5.4-mini | 3 | 3 | 2 | Omar, (none), (none) | 7 of 8 | 4 | 7.1 | 516 |
+| laptop/whisper | whisper | gpt-5.4-mini | 2 | 3 | 2 | Omar, Lina, (none) | 7 of 8 | 1 | 2.7 | 438 |
 
 ### speech: first 8 lines
 
