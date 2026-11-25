@@ -4,14 +4,14 @@ Generated from the headings of [decisions.md](decisions.md) by `scripts/decision
 hand. `tests/unit/test_decisions.py` fails when this file and the headings disagree, or when a number is
 missing or used twice.
 
-51 decisions (D1–D51): 29 updated by a later one, 2 with a status of
+53 decisions (D1–D53): 30 updated by a later one, 2 with a status of
 their own (open questions, workarounds); the rest accepted as written.
 
 | # | Decision | Status |
 |---|---|---|
 | [D1](decisions.md#d1--shape-a-recording-in-a-summary-out) | Shape: a recording in, a summary out | accepted |
 | [D2](decisions.md#d2--transcription-on-the-laptop-faster-whisper-whisper-small-english) | Transcription on the laptop: faster-whisper, Whisper small, English | accepted |
-| [D3](decisions.md#d3--transcription-on-azure-speech-batch-transcription-rest-api-2025-10-15) | Transcription on Azure: Speech batch transcription, REST API 2025-10-15 | built in M6 against the documented API (D44–D47), fake-tested only; first run on Azure in M7; updated by D44 |
+| [D3](decisions.md#d3--transcription-on-azure-speech-batch-transcription-rest-api-2025-10-15) | Transcription on Azure: Speech batch transcription, REST API 2025-10-15 | built in M6 against the documented API (D44–D47); run on Azure in M7 (D51); the transcriber on Azure (D52); updated by D44, D52 |
 | [D4](decisions.md#d4--the-summary-contract-strict-schema-limits-afterwards-grounded-in-the-transcript) | The summary contract: strict schema, limits afterwards, grounded in the transcript | accepted; updated by D14, D23, D24, D25 |
 | [D5](decisions.md#d5--the-model-one-openai-compatible-client) | The model: one OpenAI-compatible client | accepted; updated by D46 |
 | [D6](decisions.md#d6--owners-come-from-what-was-said-not-from-who-spoke) | Owners come from what was said, not from who spoke | accepted; updated by D29 |
@@ -27,7 +27,7 @@ their own (open questions, workarounds); the rest accepted as written.
 | [D16](decisions.md#d16--limits-and-checks-before-any-model-runs) | Limits and checks before any model runs | accepted; updated by D22, D24 |
 | [D17](decisions.md#d17--stores-one-job-record-per-meeting-in-cosmos-db-transcripts-as-blobs) | Stores: one job record per meeting in Cosmos DB, transcripts as blobs | accepted; updated by D38, D44 |
 | [D18](decisions.md#d18--stages-in-cosmos-rather-than-durable-functions-deliveries-are-at-least-once) | Stages in Cosmos rather than Durable Functions; deliveries are at least once | accepted; updated by D21, D45 |
-| [D19](decisions.md#d19--whisper-inside-the-function-on-azure-measured-now-decided-in-m7) | Whisper inside the Function on Azure: measured now, decided in M7 | open: decided in M7 with these numbers and M7's own; updated by D20, D37 |
+| [D19](decisions.md#d19--whisper-inside-the-function-on-azure-measured-now-decided-in-m7) | Whisper inside the Function on Azure: measured now, decided in M7 | closed by D52: Speech batch transcription on Azure, no Whisper in the Function; updated by D20, D37, D52 |
 | [D20](decisions.md#d20--lab-limits-ollama-capped-at-6-cpus-whisper-at-4-threads-updates-d8-d19) | Lab limits: Ollama capped at 6 CPUs, Whisper at 4 threads | accepted; updates D8, D19; updated by D30 |
 | [D21](decisions.md#d21--a-model-error-waits-before-the-hosts-retry-updates-d18) | A model error waits before the host's retry | accepted; updates D18; updated by D45 |
 | [D22](decisions.md#d22--attachments-docx-through-docling-pdf-through-its-text-layer-updates-d16) | Attachments: DOCX through Docling, PDF through its text layer | accepted; updates D16; updated by D33 |
@@ -52,11 +52,13 @@ their own (open questions, workarounds); the rest accepted as written.
 | [D41](decisions.md#d41--models-and-speech-on-azure-settings-now-code-in-m6) | Models and speech on Azure: settings now, code in M6 | accepted; updated by D46 |
 | [D42](decisions.md#d42--identities-and-roles) | Identities and roles | accepted; updated by D49 |
 | [D43](decisions.md#d43--iac-checks-floci-az-checkov-conftest-known-bad-plans-updates-d34-d36) | IaC checks: floci-az, Checkov, Conftest, known-bad plans | accepted; updates D34, D36 |
-| [D44](decisions.md#d44--the-transcriber-on-azure-speech-batch-transcription-chosen-by-speech_endpoint-updates-d3-d17) | The transcriber on Azure: Speech batch transcription, chosen by `SPEECH_ENDPOINT` | accepted; updates D3, D17 |
+| [D44](decisions.md#d44--the-transcriber-on-azure-speech-batch-transcription-chosen-by-speech_endpoint-updates-d3-d17) | The transcriber on Azure: Speech batch transcription, chosen by `SPEECH_ENDPOINT` | accepted; updates D3, D17; updated by D52 |
 | [D45](decisions.md#d45--how-the-function-waits-for-a-batch-job-polled-inside-the-stage-checkpointed-on-the-record-updates-d18-d21) | How the Function waits for a batch job: polled inside the stage, checkpointed on the record | accepted; updates D18, D21 |
 | [D46](decisions.md#d46--microsoft-entra-tokens-for-azure-openai-and-speech-updates-d5-d41) | Microsoft Entra tokens for Azure OpenAI and Speech | accepted; updates D5, D41 |
 | [D47](decisions.md#d47--testing-speech-without-the-service-updates-d35-d36) | Testing Speech without the service | accepted; updates D35, D36 |
 | [D48](decisions.md#d48--azure-deploys-through-ci-deployyml-the-sessions-order-project-3s-workarounds) | Azure deploys through CI: deploy.yml, the session's order, Project 3's workarounds | accepted; updated by D51 |
 | [D49](decisions.md#d49--the-operators-laptop-on-the-deployed-stack-updates-d42) | The operator's laptop on the deployed stack | accepted; updates D42 |
-| [D50](decisions.md#d50--how-speech-is-compared-with-whisper) | How Speech is compared with Whisper | accepted; updated by D51 |
+| [D50](decisions.md#d50--how-speech-is-compared-with-whisper) | How Speech is compared with Whisper | accepted; updated by D51, D52 |
 | [D51](decisions.md#d51--what-the-m7-evidence-showed-and-what-m8-fixed-updates-d48-d50) | What the M7 evidence showed, and what M8 fixed | accepted; updates D48, D50 |
+| [D52](decisions.md#d52--the-transcriber-on-azure-speech-batch-transcription-whisper-stays-on-the-laptop-updates-d3-d19-d44-d50) | The transcriber on Azure: Speech batch transcription; Whisper stays on the laptop | accepted; updates D3, D19, D44, D50 |
+| [D53](decisions.md#d53--state-at-the-close-m8) | State at the close (M8) | accepted |
