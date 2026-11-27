@@ -111,7 +111,7 @@ Two scripted meetings (M01: three speakers, decisions and owners; M02: nothing d
 | Transcription time, M01 / M02 | 95 s / 61 s (submit to result) | 28.6 s / 13.1 s |
 | Summary checks, M01 / M02 | 7 of 8 / 6 of 6 (Lina's owner removed by grounding) | 7 of 8 / 6 of 6 (two evidence times off) |
 
-The deployed job function ran 79 s at the median and 113 s at most (AppRequests), every job at attempt 1 and delivery 1; the summaries took 2.9 s and 1.6 s. Speech read the recordings with its own identity, without a SAS (D3, [telemetry](docs/evidence/m8-telemetry.txt)). The evening cost 0 USD ([m7-cost.txt](docs/evidence/m7-cost.txt)).
+The deployed job function ran 79 s at the median and 113 s at most (AppRequests), every job at attempt 1 and delivery 1; the summaries took 2.9 s and 1.6 s. Speech read the recordings with its own identity, without a SAS (D3, [telemetry](docs/evidence/m8-telemetry.txt)). The evening cost under 0.01 USD ([m7-cost.txt](docs/evidence/m7-cost.txt)).
 
 **Choice (D52):** Speech batch transcription on Azure, Whisper on the laptop. Speech runs serverless without a model in the package and labels speakers; its accuracy here is within a point of Whisper's. Its cost is names: there is no phrase list, so a misheard name loses its owner (safely: an empty owner, never a wrong one). Two synthetic meetings are a first contact, not a ranking.
 
