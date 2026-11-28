@@ -1,0 +1,15 @@
+# CI only (the chart job): every template rendered, with a made-up repository and digest. The platform repo has the
+# real values.
+image:
+  repository: registry.example/meeting-summarizer
+  digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+settings:
+  STT_MODEL: stt-tiny
+network:
+  egress:
+    - cidr: 192.0.2.0/28 # TEST-NET-1: an address range that is never routed
+      ports: [10000, 10001, 8081]
+models:
+  enabled: true
+lab:
+  enabled: true

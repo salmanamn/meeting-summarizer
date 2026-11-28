@@ -1,0 +1,10 @@
+# The image gets the app (src/), the models lock and the fake LLM, nothing else (D54). Local settings never go in.
+*
+!src/
+!models.lock.json
+!scripts/fake_llm.py
+src/local.settings.json
+src/local.settings.json.example
+src/azure.settings.json
+**/__pycache__
+**/*.pyc

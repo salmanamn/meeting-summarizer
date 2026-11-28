@@ -125,6 +125,67 @@ jobs:
           set -o pipefail
           uv run --no-sync python scripts/package_size.py --max-zip-mb 200 --forbid torch,onnxruntime-gpu,piper-tts,pytest,ruff | tee -a "$GITHUB_STEP_SUMMARY"
 
+  chart:
+    name: chart
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install Helm (pinned, checksum-verified)
+        run: ./scripts/ci-tools.sh helm
+      - name: helm lint
+        run: helm lint deploy/chart/meeting-summarizer -f deploy/chart/ci-values.yaml
+      - name: Every template renders (models, lab, KEDA, network policies)
+        run: |
+          set -o pipefail
+          helm template meetings deploy/chart/meeting-summarizer -n meetings -f deploy/chart/ci-values.yaml | grep -c '^kind:'
+      - name: No image, no render (a cluster runs what CI built, D56)
+        run: |
+          if helm template meetings deploy/chart/meeting-summarizer -n meetings > /dev/null 2> err.txt; then
+            echo "rendered without image.repository and image.digest"; exit 1
+          fi
+          grep -q "image.repository is required" err.txt
+
+  image:
+    name: image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install uv and Trivy
+        run: pipx install "uv==${UV_VERSION}" && ./scripts/ci-tools.sh trivy
+      - name: Sync
+        run: uv sync --locked
+      - name: Build
+        run: docker build --quiet -t meeting-summarizer:ci .
+      - name: Image rules, then the host started without a network (D54)
+        run: uv run python scripts/check_image.py --image meeting-summarizer:ci
+      - name: Scan (no fixable Critical; High reported, D57) and SBOM
+        run: |
+          set -o pipefail
+          trivy image --quiet --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL --format table meeting-summarizer:ci | tee trivy.txt
+          trivy image --quiet --format cyclonedx --output sbom.cdx.json meeting-summarizer:ci
+          high=$(trivy image --quiet --scanners vuln --ignore-unfixed --severity HIGH --format json meeting-summarizer:ci | jq '[.Results[]?.Vulnerabilities[]?] | length')
+          echo "fixable High findings: $high (reported, not gated)" | tee -a "$GITHUB_STEP_SUMMARY"
+          trivy image --quiet --scanners vuln --ignore-unfixed --severity CRITICAL --exit-code 1 meeting-summarizer:ci > /dev/null
+          echo "fixable Critical findings: 0" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Save the image and its SBOM
+        run: docker save meeting-summarizer:ci | zstd -T0 -3 -q -o image.tar.zst && ls -lh image.tar.zst
+      - uses: actions/upload-artifact@v7
+        with:
+          name: image
+          path: |
+            image.tar.zst
+            sbom.cdx.json
+            trivy.txt
+          # main: kept 30 days, the platform loads it into its registry (not published, D54, D57); PRs: 1 day
+          retention-days: ${{ github.event_name == 'push' && 30 || 1 }}
+          compression-level: 0
+
   iac-static:
     name: iac-static
     runs-on: ubuntu-24.04

@@ -1,7 +1,7 @@
 """A deterministic stand-in for an OpenAI-compatible chat endpoint, for CI's pipeline test (D36). No model, no
 network, standard library only.
 
-uv run python scripts/fake_llm.py [--port 11434]       or, in a test:  FakeLLM().start() ... .stop()
+uv run python scripts/fake_llm.py [--host 127.0.0.1] [--port 11434]       or, in a test:  FakeLLM().start() ... .stop()
 
 POST /v1/chat/completions answers the way a model following this project's contract would, from the request alone:
 - a request without `response_format: json_schema` and `strict: true`, or with a schema outside the strict subset
@@ -97,7 +97,7 @@ def answer(body: dict) -> tuple[int, dict | str]:
 
 
 class FakeLLM:
-    def __init__(self, port: int = 0) -> None:
+    def __init__(self, port: int = 0, host: str = "127.0.0.1") -> None:
         self.requests: list[dict] = []
         self.next_status: list[int] = []
         fake = self
@@ -146,8 +146,8 @@ class FakeLLM:
             def log_message(self, *args):
                 pass
 
-        self._server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-        self.url = f"http://127.0.0.1:{self._server.server_address[1]}/v1"
+        self._server = ThreadingHTTPServer((host, port), Handler)
+        self.url = f"http://{host}:{self._server.server_address[1]}/v1"
 
     def start(self) -> "FakeLLM":
         threading.Thread(target=self._server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True).start()
@@ -160,9 +160,10 @@ class FakeLLM:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--host", default="127.0.0.1", help="listen address (0.0.0.0 in a pod, Project 7 D56)")
     parser.add_argument("--port", type=int, default=11434)
     args = parser.parse_args()
-    fake = FakeLLM(args.port)
+    fake = FakeLLM(args.port, args.host)
     print(f"fake LLM on {fake.url}")
     try:
         fake._server.serve_forever()

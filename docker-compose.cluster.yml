@@ -1,0 +1,24 @@
+# Project 7 (secure-ai-platform, its M4; here D56): the emulators the laptop cluster's meetings tenant uses, attached
+# to minikube's docker network ("aiplat") with fixed addresses, so the pods reach them directly. Their ports stay
+# published on 127.0.0.1 for the laptop's own scripts (upload, the Event Grid stub); nothing new is published.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.cluster.yml up -d
+#
+# The network belongs to minikube: start the cluster first (secure-ai-platform: ./scripts/cluster.sh up).
+# 192.168.58.112/28 is the platform's range for this tenant (its egressCIDRs); both addresses are inside it. Same
+# host ports as the ticket-triage lab: one lab's emulators at a time (D8).
+services:
+  azurite:
+    networks:
+      default: {}
+      aiplat:
+        ipv4_address: 192.168.58.113
+  cosmos:
+    networks:
+      default: {}
+      aiplat:
+        ipv4_address: 192.168.58.114
+
+networks:
+  aiplat:
+    external: true

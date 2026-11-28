@@ -1,0 +1,83 @@
+# The meeting summarizer as a Kubernetes tenant (D56). Neutral defaults: the platform repo (secure-ai-platform) gives
+# the values for its cluster and pins the image by digest. Secrets are never values: the platform creates them.
+
+image:
+  repository: "" # required: the platform's registry (the image is not published, D54)
+  digest: "" # required, sha256:<64 hex>: a cluster runs what CI built and checked, not a tag
+
+# Which functions each deployment loads (AzureFunctionsJobHost__functions__N). Both run the same image, whose
+# MEETING_TRIGGER=queue registers meeting_queue_job, not the Event Grid Blob trigger (D55).
+functions:
+  http: [meeting_status, health]
+  worker: [meeting_queue_job]
+
+# Non-secret app settings, as env vars (the same names as src/local.settings.json and the Azure app settings).
+settings: {}
+
+# Secret app settings: env vars read from a Secret the platform creates in the namespace (tenants can't).
+secretSettings:
+  secretName: meetings-settings
+  keys: [AzureWebJobsStorage, RecordingsStorage, COSMOS_KEY, OPENAI_API_KEY]
+
+# Functions host keys as files (the platform's D9): a Secret mounted at /run/secrets/functions-keys, read-only.
+functionKeys:
+  secretName: meetings-function-keys
+
+http:
+  replicas: 1
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 640Mi }
+
+worker:
+  # Whisper runs here: STT_THREADS in settings should match the CPU it may use.
+  resources:
+    requests: { cpu: 400m, memory: 768Mi }
+    limits: { memory: 1536Mi }
+
+# The worker is scaled by KEDA from the queue's length (azure-queue scaler; the connection comes from a
+# ClusterTriggerAuthentication the platform owns).
+keda:
+  minReplicas: 0
+  maxReplicas: 1 # one Whisper per instance (host.json batchSize 1)
+  pollingInterval: 5
+  cooldownPeriod: 60
+  queue:
+    name: meeting-events
+    clusterTriggerAuthentication: meetings-queue
+
+# Whisper's files (D56): a Job downloads the locked models into a volume once, every worker checks them before it
+# starts and mounts them read-only. On Azure the worker uses Speech batch transcription and needs none (D52).
+models:
+  enabled: false
+  names: [stt-tiny]
+  storage: 256Mi
+  storageClassName: "" # the cluster's default
+  hfEndpoint: https://huggingface.co
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { memory: 256Mi }
+
+# Network policies the tenant needs on top of the platform's default deny (DNS is the platform's).
+network:
+  # Where the data services are: ranges and ports (exactly as the platform lists them for this tenant).
+  egress: []
+  # The models Job only: HTTPS to the internet, private ranges excepted (the platform's D31 judges it).
+  modelDownloads:
+    ports: [443]
+    except:
+      [
+        10.0.0.0/8,
+        172.16.0.0/12,
+        192.168.0.0/16,
+        100.64.0.0/10,
+        169.254.0.0/16,
+        127.0.0.0/8,
+      ]
+
+# The fake LLM for a laptop cluster, from this image (/opt/meeting-lab).
+lab:
+  enabled: false
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 96Mi }

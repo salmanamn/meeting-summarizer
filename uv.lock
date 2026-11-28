@@ -134,6 +134,21 @@ wheels = [
 ]
 
 [[package]]
+name = "azure-storage-queue"
+version = "12.18.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "azure-core" },
+    { name = "cryptography" },
+    { name = "isodate" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6a/42/a46b58e23f4022fd4f41e8f49c20e7f49136802114d873f083580df30e23/azure_storage_queue-12.18.1.tar.gz", hash = "sha256:ed52931a9fbff1383a198d2d90b9692535a31e0339193ccfd5aa75cdc1808d1d", size = 234943, upload-time = "2026-10-29T23:33:12.638Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/5a/db288df9da1bf29a723d4bfbecc476f0c0da4764591bdb2fa8d3a00c5414/azure_storage_queue-12.18.1-py3-none-any.whl", hash = "sha256:791ed52e2aae4b136ded3e530414fda2fdaf4ab356891b017cf77b337609a2a4", size = 206738, upload-time = "2026-10-29T23:33:14.191Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.11.20"
 source = { registry = "https://pypi.org/simple" }
@@ -716,7 +731,7 @@ wheels = [
 name = "meeting-summarizer"
 version = "0.1.0"
 source = { editable = "." }
-default-groups = ["dev", "docs", "fixtures", "function", "models", "storage", "stt"]
+default-groups = ["dev", "docs", "fixtures", "function", "lab", "models", "storage", "stt"]
 dependencies = [
     { name = "httpx" },
     { name = "openai" },
@@ -738,6 +753,9 @@ fixtures = [
 ]
 function = [
     { name = "azure-functions" },
+]
+lab = [
+    { name = "azure-storage-queue" },
 ]
 models = [
     { name = "defusedxml" },
@@ -775,6 +793,7 @@ fixtures = [
     { name = "reportlab", specifier = ">=4.4,<5" },
 ]
 function = [{ name = "azure-functions", specifier = ">=2.4,<3" }]
+lab = [{ name = "azure-storage-queue", specifier = ">=12.18,<13" }]
 models = [
     { name = "defusedxml", specifier = ">=0.7,<0.8" },
     { name = "httpx", specifier = ">=0.28,<1" },

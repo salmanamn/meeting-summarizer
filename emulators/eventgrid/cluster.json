@@ -1,0 +1,19 @@
+{
+  "comment": "Project 7 (D55): the laptop's stand-in for the Event Grid subscription that writes manifests' BlobCreated events into the storage queue the cluster's queue trigger reads. The stub runs on the laptop, against Azurite's published ports.",
+  "source": {
+    "account": "devstoreaccount1",
+    "containers": ["incoming"],
+    "pollSeconds": 1
+  },
+  "retryDelaysSeconds": [2, 4, 8, 16],
+  "subscriptions": [
+    {
+      "name": "manifest-queue",
+      "includedEventTypes": ["Microsoft.Storage.BlobCreated"],
+      "subjectBeginsWith": "/blobServices/default/containers/incoming/blobs/",
+      "subjectEndsWith": "/meeting.json",
+      "destination": { "type": "storageQueue", "queueName": "meeting-events" },
+      "maxDeliveryAttempts": 5
+    }
+  ]
+}

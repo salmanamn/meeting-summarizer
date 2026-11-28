@@ -1,0 +1,62 @@
+{{- if .Values.models.enabled }}
+{{- /*
+Whisper's files (D56): the volume, and the Job that fills it from the lock baked into the image. The Job's name
+carries a hash of the image and the model list, so a new release starts a new Job (a Job's template can't change).
+*/ -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-models
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "meeting.labels" . | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with .Values.models.storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.models.storage }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-models-{{ printf "%s %s" (include "meeting.image" .) (join "," .Values.models.names) | sha256sum | trunc 8 }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "meeting.labels" . | nindent 4 }}
+    app.kubernetes.io/component: models
+spec:
+  backoffLimit: 4
+  activeDeadlineSeconds: 1800
+  template:
+    metadata:
+      labels:
+        {{- include "meeting.labels" . | nindent 8 }}
+        app.kubernetes.io/component: models
+    spec:
+      restartPolicy: Never
+      {{- include "meeting.podSecurity" . | nindent 6 }}
+      containers:
+        - name: fetch
+          image: {{ include "meeting.image" . }}
+          imagePullPolicy: IfNotPresent
+          command: ["python3", "-m", "meeting.fetch_job", "fetch", {{ range $i, $n := .Values.models.names }}{{ if $i }}, {{ end }}{{ $n | quote }}{{ end }}]
+          env:
+            {{- include "meeting.pythonPath" . | nindent 12 }}
+            - name: HF_ENDPOINT
+              value: {{ .Values.models.hfEndpoint | quote }}
+          securityContext:
+            {{- include "meeting.containerSecurity" . | nindent 12 }}
+            readOnlyRootFilesystem: true
+          resources:
+            {{- toYaml .Values.models.resources | nindent 12 }}
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-models
+{{- end }}

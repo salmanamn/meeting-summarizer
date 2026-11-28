@@ -1,0 +1,58 @@
+{{- if .Values.lab.enabled }}
+{{- /*
+Laptop only (D56): the fake LLM (stdlib, /opt/meeting-lab in this image) as a pod. Event Grid's stand-in stays on
+the laptop, next to Azurite, as Event Grid is outside the cluster on Azure too (D55).
+*/ -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-lab-llm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "meeting.labels" . | nindent 4 }}
+    app.kubernetes.io/component: lab-llm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "meeting.selector" (dict "root" . "component" "lab-llm") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "meeting.labels" . | nindent 8 }}
+        app.kubernetes.io/component: lab-llm
+    spec:
+      {{- include "meeting.podSecurity" . | nindent 6 }}
+      containers:
+        - name: llm
+          image: {{ include "meeting.image" . }}
+          imagePullPolicy: IfNotPresent
+          command: ["python3", "/opt/meeting-lab/fake_llm.py", "--host", "0.0.0.0", "--port", "11434"]
+          ports:
+            - name: http
+              containerPort: 11434
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 5
+          securityContext:
+            {{- include "meeting.containerSecurity" . | nindent 12 }}
+            readOnlyRootFilesystem: true
+          resources:
+            {{- toYaml .Values.lab.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-lab-llm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "meeting.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "meeting.selector" (dict "root" . "component" "lab-llm") | nindent 4 }}
+  ports:
+    - name: http
+      port: 11434
+      targetPort: http
+{{- end }}

@@ -1,0 +1,86 @@
+{{- /*
+The tenant's own allow rules, on top of the platform's default deny and DNS (D56). Peers are this namespace's pods,
+the platform's ranges for this tenant, and for the models Job the internet on 443 with private ranges excepted:
+the platform's rule platform-tenant-network-policy judges every one of them. Nothing calls in: KEDA reads the queue,
+not the pods, and the checks use kubectl port-forward.
+*/ -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-functions-egress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "meeting.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: meeting-summarizer
+      app.kubernetes.io/instance: {{ .Release.Name }}
+    matchExpressions:
+      - { key: app.kubernetes.io/component, operator: In, values: [http, worker] }
+  policyTypes: [Egress]
+  egress:
+    {{- range .Values.network.egress }}
+    - to:
+        - ipBlock:
+            cidr: {{ .cidr }}
+      ports:
+        {{- range .ports }}
+        - { protocol: TCP, port: {{ . }} }
+        {{- end }}
+    {{- end }}
+    {{- if .Values.lab.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "meeting.selector" (dict "root" . "component" "lab-llm") | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: 11434 }
+    {{- end }}
+{{- if .Values.models.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-model-downloads
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "meeting.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "meeting.selector" (dict "root" . "component" "models") | nindent 6 }}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              {{- toYaml .Values.network.modelDownloads.except | nindent 14 }}
+      ports:
+        {{- range .Values.network.modelDownloads.ports }}
+        - { protocol: TCP, port: {{ . }} }
+        {{- end }}
+{{- end }}
+{{- if .Values.lab.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-lab-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "meeting.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "meeting.selector" (dict "root" . "component" "lab-llm") | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "meeting.selector" (dict "root" . "component" "worker") | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: 11434 }
+{{- end }}
