@@ -10,10 +10,11 @@ from functools import lru_cache
 
 import azure.functions as func
 
+from meeting.events import EVENTS_QUEUE, manifest_name
 from meeting.job import JobRunner, public_view
 from meeting.llm import JsonModel
 from meeting.manifest import MEETING_ID_PATTERN
-from meeting.settings import load
+from meeting.settings import load, trigger
 from meeting.stores import BlobStore, JobStore
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
@@ -54,19 +55,35 @@ def _model() -> JsonModel:
     return JsonModel.from_settings(load())
 
 
-# D12/D15: Flex Consumption has only the Event Grid-based Blob trigger. The path matches manifests only, and the
-# Event Grid subscription filters on the same suffix, so a 300 MB recording never reaches the worker.
-@app.blob_trigger(
-    arg_name="manifest",
-    path="incoming/{meeting_id}/meeting.json",
-    connection="RecordingsStorage",
-    source=func.BlobSource.EVENT_GRID,
-)
-def meeting_job(manifest: func.InputStream) -> None:
-    """Any exception makes the host retry the delivery at once, up to poisonBlobThreshold (host.json), then the
-    message goes to the poison queue `webjobs-blobtrigger-poison`; the job records its own last attempt."""
-    outcome = _runner().handle(manifest.name)
-    log.info("meeting job %s: %s (%s)", outcome.meeting_id or manifest.name, outcome.status, outcome.detail)
+if trigger() == "queue":
+    # D55 (a container on a cluster, Project 7): Event Grid writes the manifest's BlobCreated event into a storage
+    # queue, the host pulls it. Outbound only, so it works behind private endpoints, and KEDA scales on the queue.
+    @app.queue_trigger(arg_name="msg", queue_name=EVENTS_QUEUE, connection="RecordingsStorage")
+    def meeting_queue_job(msg: func.QueueMessage) -> None:
+        """Any exception makes the host retry the message, up to maxDequeueCount (host.json), then it moves to the
+        queue `meeting-events-poison`; the job records its own last attempt. An event that names no manifest is
+        logged and completed: retrying it can't help."""
+        name = manifest_name(msg.get_body().decode("utf-8", errors="replace"), load().incoming_container)
+        if name is None:
+            log.warning("meeting event %s ignored: not a BlobCreated event for a manifest", msg.id)
+            return
+        outcome = _runner().handle(name)
+        log.info("meeting job %s: %s (%s)", outcome.meeting_id or name, outcome.status, outcome.detail)
+
+else:
+    # D12/D15: Flex Consumption has only the Event Grid-based Blob trigger. The path matches manifests only, and the
+    # Event Grid subscription filters on the same suffix, so a 300 MB recording never reaches the worker.
+    @app.blob_trigger(
+        arg_name="manifest",
+        path="incoming/{meeting_id}/meeting.json",
+        connection="RecordingsStorage",
+        source=func.BlobSource.EVENT_GRID,
+    )
+    def meeting_job(manifest: func.InputStream) -> None:
+        """Any exception makes the host retry the delivery at once, up to poisonBlobThreshold (host.json), then the
+        message goes to the poison queue `webjobs-blobtrigger-poison`; the job records its own last attempt."""
+        outcome = _runner().handle(manifest.name)
+        log.info("meeting job %s: %s (%s)", outcome.meeting_id or manifest.name, outcome.status, outcome.detail)
 
 
 @app.route(route="meetings/{meeting_id}", methods=["GET"])

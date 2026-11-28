@@ -4,7 +4,7 @@ Generated from the headings of [decisions.md](decisions.md) by `scripts/decision
 hand. `tests/unit/test_decisions.py` fails when this file and the headings disagree, or when a number is
 missing or used twice.
 
-53 decisions (D1–D53): 30 updated by a later one, 2 with a status of
+57 decisions (D1–D57): 30 updated by a later one, 2 with a status of
 their own (open questions, workarounds); the rest accepted as written.
 
 | # | Decision | Status |
@@ -62,3 +62,7 @@ their own (open questions, workarounds); the rest accepted as written.
 | [D51](decisions.md#d51--what-the-m7-evidence-showed-and-what-m8-fixed-updates-d48-d50) | What the M7 evidence showed, and what M8 fixed | accepted; updates D48, D50 |
 | [D52](decisions.md#d52--the-transcriber-on-azure-speech-batch-transcription-whisper-stays-on-the-laptop-updates-d3-d19-d44-d50) | The transcriber on Azure: Speech batch transcription; Whisper stays on the laptop | accepted; updates D3, D19, D44, D50 |
 | [D53](decisions.md#d53--state-at-the-close-m8) | State at the close (M8) | accepted |
+| [D54](decisions.md#d54--the-app-as-a-functions-container-for-project-7s-cluster) | The app as a Functions container, for Project 7's cluster | accepted |
+| [D55](decisions.md#d55--in-a-container-the-job-reads-a-queue-event-grid--storage-queue--queue-trigger) | In a container the job reads a queue: Event Grid → storage queue → queue trigger | accepted |
+| [D56](decisions.md#d56--the-helm-chart-and-whispers-files-in-a-pod) | The Helm chart, and Whisper's files in a pod | accepted |
+| [D57](decisions.md#d57--ci-the-chart-and-the-image) | CI: the chart and the image | accepted |

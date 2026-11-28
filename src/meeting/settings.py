@@ -13,6 +13,9 @@ MB = 1024 * 1024
 SPEECH_KEY = "azure-speech"
 ENGINES = ("whisper", "speech")
 OPENAI_AUTHS = ("key", "entra")
+# The job's trigger (D55): the Event Grid-based Blob trigger on Flex Consumption (the default), or a queue the Event
+# Grid subscription writes into, for a container on a cluster (Project 7). Read at import by function_app.py.
+TRIGGERS = ("eventgrid-blob", "queue")
 
 
 class SettingsInvalid(ValueError):
@@ -74,6 +77,11 @@ class Settings:
     model_retry_base_seconds: int  # wait before a model error is retried: base, doubling per attempt (D21)
     model_retry_max_seconds: int  # ... up to this
 
+    # Project 7 (D55): false only where the Cosmos emulator is reached at another address than its own (a pod on the
+    # laptop cluster); the emulator advertises http://localhost:8081 as its region endpoint, which a pod can't reach
+    cosmos_endpoint_discovery: bool
+    trigger: str  # TRIGGERS: which function the app registers for the job
+
     @property
     def stt_model_dir(self) -> Path:
         return self.models_dir / self.stt_model
@@ -88,6 +96,15 @@ class Settings:
 def default_threads() -> int:
     """CPUs this process may use (respects container CPU pinning), capped: Whisper gains little beyond 8."""
     return max(1, min(len(os.sched_getaffinity(0)), 8))
+
+
+def trigger(env: dict[str, str] | None = None) -> str:
+    """MEETING_TRIGGER (D55), alone: function_app.py reads it at import, before any other setting is needed."""
+    env = os.environ if env is None else env
+    value = env.get("MEETING_TRIGGER", "") or "eventgrid-blob"
+    if value not in TRIGGERS:
+        raise SettingsInvalid(f"MEETING_TRIGGER must be one of {', '.join(TRIGGERS)}, not {value!r}")
+    return value
 
 
 def load(env: dict[str, str] | None = None) -> Settings:
@@ -148,4 +165,6 @@ def load(env: dict[str, str] | None = None) -> Settings:
         job_max_attempts=int(env.get("JOB_MAX_ATTEMPTS", "5")),
         model_retry_base_seconds=int(env.get("MODEL_RETRY_BASE_SECONDS", "30")),
         model_retry_max_seconds=int(env.get("MODEL_RETRY_MAX_SECONDS", "120")),
+        cosmos_endpoint_discovery=env.get("COSMOS_ENDPOINT_DISCOVERY", "true").lower() != "false",
+        trigger=trigger(env),
     )

@@ -120,7 +120,11 @@ class JobStore:
         from azure.cosmos import CosmosClient
 
         credential = settings.cosmos_key or _credential()
-        client = CosmosClient(settings.cosmos_endpoint, credential=credential)
+        client = CosmosClient(
+            settings.cosmos_endpoint,
+            credential=credential,
+            enable_endpoint_discovery=settings.cosmos_endpoint_discovery,
+        )
         return cls(client.get_database_client(settings.cosmos_database).get_container_client(settings.jobs_container))
 
     def get(self, job_id: str) -> dict | None:

@@ -13,7 +13,9 @@ budget, given only the bytes the job checked, never handed a token outside its e
 an Entra token by its settings (D44-D46); the laptop's settings never pick Speech, the operator reads transcripts/ and
 nothing else there, and the comparison counts a name only as spelled (D49, D50); every check is a bool, the
 telemetry survives a failed query, run evidence drops echoed commands, and the SDKs' HTTP dumps stay out of App
-Insights (D51).
+Insights (D51); in a container the job reads only manifests' events from its queue with bounded retries, Cosmos
+keeps the address it was given, the stub writes what the queue trigger decodes, the models are checked against the
+lock, and the image runs as a fixed user (D54-D56).
 
 The script works on a temporary copy of the repository (tracked and new files, not ignored ones), so the working
 tree is never changed. Exit 1 when a mutation survives (the tests still pass: add a test), when its anchor text is
@@ -357,6 +359,56 @@ MUTATIONS = [
         'logging.getLogger("azure").setLevel(logging.WARNING)',
         "pass",
         "tests/unit/test_function_app.py",
+    ),
+    # Project 7 (D54-D56): the container, the queue trigger, the models Job
+    Mutation(
+        "queue-trigger-never-registered",
+        "src/function_app.py",
+        'if trigger() == "queue":',
+        "if False:",
+        "tests/unit/test_cluster_trigger.py",
+    ),
+    Mutation(
+        "queue-retries-unbounded",
+        "src/host.json",
+        '"maxDequeueCount": 5,',
+        '"maxDequeueCount": 50,',
+        "tests/unit/test_cluster_trigger.py",
+    ),
+    Mutation(
+        "event-from-any-container",
+        "src/meeting/events.py",
+        "not subject.startswith(prefix) or ",
+        "",
+        "tests/unit/test_cluster_trigger.py",
+    ),
+    Mutation(
+        "cosmos-discovery-ignored",
+        "src/meeting/stores.py",
+        "enable_endpoint_discovery=settings.cosmos_endpoint_discovery,",
+        "enable_endpoint_discovery=True,",
+        "tests/unit/test_cluster_trigger.py",
+    ),
+    Mutation(
+        "models-check-accepts-anything",
+        "src/meeting/fetch_job.py",
+        "        problems += verify(name, models_dir, lock)\n",
+        "",
+        "tests/unit/test_cluster_trigger.py",
+    ),
+    Mutation(
+        "stub-queue-not-base64",
+        "scripts/eventgrid_stub.py",
+        "connection, queue_name, message_encode_policy=TextBase64EncodePolicy()",
+        "connection, queue_name",
+        "tests/unit/test_cluster_trigger.py",
+    ),
+    Mutation(
+        "image-runs-as-root",
+        "Dockerfile",
+        "USER 10001:10001\n",
+        "",
+        "tests/unit/test_container.py",
     ),
 ]
 

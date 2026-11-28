@@ -115,6 +115,10 @@ The deployed job function ran 79 s at the median and 113 s at most (AppRequests)
 
 **Choice (D52):** Speech batch transcription on Azure, Whisper on the laptop. Speech runs serverless without a model in the package and labels speakers; its accuracy here is within a point of Whisper's. Its cost is names: there is no phrase list, so a misheard name loses its owner (safely: an empty owner, never a wrong one). Two synthetic meetings are a first contact, not a ranking.
 
+## On a Kubernetes cluster (Project 7)
+
+The same app runs as a tenant of [secure-ai-platform](https://github.com/salmanamn/secure-ai-platform) (its M4): a Functions container (D54) whose job reads the manifest's event from a storage queue instead of an Event Grid webhook (D55), deployed with the Helm chart in `deploy/chart/meeting-summarizer` (two deployments, KEDA from zero on the queue, a Job for Whisper's files, D56). CI checks the chart and the image (D57); the image is not published (PyAV's bundled FFmpeg, D54): the platform takes CI's artifact into its own registry. On the laptop: `docker compose -f docker-compose.yml -f docker-compose.cluster.yml up -d` puts the emulators on minikube's network, and `uv run python scripts/eventgrid_stub.py --config emulators/eventgrid/cluster.json` stands in for Event Grid.
+
 ## Known limits
 
 - Synthetic test meetings (D7) and a few AMI corpus meetings locally (D33); no real recordings on Azure, no Arabic, no overlapping speech.

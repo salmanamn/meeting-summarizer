@@ -8,7 +8,7 @@ set -euo pipefail
 
 REPO=${REPO:-salmanamn/meeting-summarizer}
 REF=${1:?usage: protect-main.sh <ref with green CI>}
-CHECKS=(lint unit tests-must-fail integration package iac-static iac-plan)
+CHECKS=(lint unit tests-must-fail integration package iac-static iac-plan chart image)
 
 runs=$(gh api "repos/$REPO/commits/$REF/check-runs?per_page=100" \
   --jq '.check_runs[] | [.name, (.conclusion // "pending"), (.app.id | tostring)] | @tsv')

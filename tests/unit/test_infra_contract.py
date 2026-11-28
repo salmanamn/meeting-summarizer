@@ -84,7 +84,7 @@ def test_the_manifest_subscription_filters_as_the_local_stub(stub):
 def test_the_webhook_is_the_blobs_extension_of_the_triggered_function(stub):
     """The webhook names the function by its Python name; the stub calls the same path locally (D15, D40)."""
     source = FUNCTION_APP.read_text()
-    trigger = re.search(r"@app\.blob_trigger\((.*?)\)\ndef (\w+)\(", source, re.DOTALL)
+    trigger = re.search(r"@app\.blob_trigger\((.*?)\)\n\s*def (\w+)\(", source, re.DOTALL)
     assert trigger, "no blob-triggered function in function_app.py"
     assert tf_default("trigger_function_name") == trigger.group(2)
     assert stub["endpoint"].endswith(f"/runtime/webhooks/blobs?functionName=Host.Functions.{trigger.group(2)}")

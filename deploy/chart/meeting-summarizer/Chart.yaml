@@ -1,0 +1,6 @@
+apiVersion: v2
+name: meeting-summarizer
+description: The meeting summarizer as a Kubernetes tenant (Project 7, D56)
+type: application
+version: 0.1.0
+appVersion: "m4"

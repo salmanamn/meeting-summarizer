@@ -16,6 +16,9 @@ What it does, and what Event Grid does the same way:
   per event in data/eventgrid/deadletter/<subscription>/.
 - At-least-once: `POST /_stub/replay {"subject_endswith": "<id>/meeting.json"}` sends the last such event again
   with the same id, which is what an Event Grid duplicate looks like.
+- A subscription with `"destination": {"type": "storageQueue", "queueName": ...}` instead of `endpoint` writes each
+  event into that queue (QUEUE_CONN, default BLOB_CONN), base64-encoded like the Functions queue trigger expects:
+  Event Grid's storage queue handler (Project 7, D55). No handshake; a failed write is retried like a webhook.
 Not emulated: other event types (BlobDeleted, ...), batching, CloudEvents schema, delivery identity, the webhook key
 (`code=`; the local host doesn't ask for it).
 
@@ -136,14 +139,55 @@ def validate(endpoint: str, timeout: float) -> bool:
         return False
 
 
+def queue_destination(config: dict) -> str | None:
+    """The queue name of a storage queue subscription (D55), None for a webhook one."""
+    destination = config.get("destination") or {}
+    if not destination:
+        return None
+    if destination.get("type") != "storageQueue" or not destination.get("queueName"):
+        raise SystemExit(f"subscription {config['name']}: destination must be a storageQueue with a queueName")
+    return destination["queueName"]
+
+
+class QueueSender:
+    """Event Grid's storage queue handler: one event per message, base64 (the queue trigger's default encoding)."""
+
+    def __init__(self, queue_name: str, connection: str) -> None:
+        from azure.storage.queue import QueueClient, TextBase64EncodePolicy
+
+        self.client = QueueClient.from_connection_string(
+            connection, queue_name, message_encode_policy=TextBase64EncodePolicy()
+        )
+
+    def __call__(self, event: dict) -> int:
+        try:
+            self.client.send_message(json.dumps(event))
+        except Exception:  # Azurite down, queue missing: retried like a webhook that didn't answer
+            return 0
+        return 201
+
+
 class Subscription:
-    def __init__(self, config: dict, delays: list[float], record: deque) -> None:
+    def __init__(self, config: dict, delays: list[float], record: deque, sender=None) -> None:
         self.name = config["name"]
         self.config = config
         self.delays = delays
         self.record = record
-        self.validated = False
         self.events: queue.Queue = queue.Queue()
+        self.queue_name = queue_destination(config)
+        if self.queue_name and sender is None:
+            connection = os.getenv("QUEUE_CONN") or os.getenv("BLOB_CONN", "UseDevelopmentStorage=true")
+            sender = QueueSender(self.queue_name, connection)
+        self.sender = sender
+        self.validated = self.queue_name is not None  # a queue needs no handshake
+
+    def _send(self, event: dict, attempt: int) -> int:
+        if self.sender is not None:
+            return self.sender(event)
+        status, _ = post(
+            self.config["endpoint"], [event], "Notification", self.config.get("timeoutSeconds", 30), attempt
+        )
+        return status
 
     def start(self) -> "Subscription":
         threading.Thread(target=self._run, daemon=True).start()
@@ -160,7 +204,8 @@ class Subscription:
         log(self.name, f"validated: the endpoint answered the handshake ({time.monotonic() - started:.0f} s)")
 
     def _run(self) -> None:
-        self._handshake()
+        if not self.validated:
+            self._handshake()
         while True:
             self._deliver(self.events.get())
 
@@ -168,9 +213,7 @@ class Subscription:
         short, limit = event["id"][:8], self.config.get("maxDeliveryAttempts", 30)
         status = 0
         for attempt in range(1, limit + 1):
-            status, _ = post(
-                self.config["endpoint"], [event], "Notification", self.config.get("timeoutSeconds", 30), attempt
-            )
+            status = self._send(event, attempt)
             if 200 <= status <= 204:
                 log(self.name, f"{short} delivered: HTTP {status} (attempt {attempt})")
                 self._remember(event, "delivered", status, attempt)

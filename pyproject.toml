@@ -42,9 +42,12 @@ dev = [
     "pytest>=9.2,<10",
     "ruff>=0.17,<0.18",
 ]
+lab = [
+    "azure-storage-queue>=12.18,<13",
+]
 
 [tool.uv]
-default-groups = ["stt", "storage", "function", "docs", "fixtures", "models", "dev"]
+default-groups = ["stt", "storage", "function", "docs", "fixtures", "models", "lab", "dev"]
 
 [build-system]
 requires = ["hatchling>=1.27"]
